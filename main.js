@@ -88,9 +88,10 @@ mainScene.createBubble = function(x, y, text) {
 };
 
 mainScene.changeText = function() {
+	var text;
     switch (textNumber) {
         case 0:
-            var text = "Ah, hello there. You must be my latest assistant. Please, allow me to introduce myself.";
+            text = "Ah, hello there. You must be my latest assistant. Please, allow me to introduce myself.";
             textNumber++;
             break;
         case 1:

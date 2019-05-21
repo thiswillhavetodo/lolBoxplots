@@ -7,6 +7,9 @@ var treadmillTwo;
 var labScene = new Phaser.Scene('lab');
 
 labScene.create = function() {
+	if (extraIngredient1=='none') {
+		extraIngredient1 = 'Soda';
+	}
     var background = this.add.image(400, 300, 'labBackground');
     background.setScale(2);
     madScientistLabSprite = this.add.sprite(730, 504, 'madScientist');
@@ -26,7 +29,48 @@ labScene.create = function() {
     this.time.delayedCall(750, function() { this.createBubble(635, 300, speechText); }, [], this);
 };
 
+labScene.setResults = function() {
+	var ingredient, speed, lifetime;
+	if (extraIngredient3!='none') {
+		ingredient = extraIngredient3;
+	}
+	else if (extraIngredient2!='none') {
+		ingredient = extraIngredient2;
+	}
+	else if (extraIngredient1!='none') {
+		ingredient = extraIngredient1;
+	}
+	switch (ingredient) {
+		case 'Cat Fur':
+			speed = 7;
+			lifetime = 8;
+			break;
+		case 'Ketchup':
+			speed = 4;
+			lifetime = 12;
+			break;
+		case 'Soda':
+			speed = 6;
+			lifetime = 9;
+			break;
+		case 'Slime':
+			speed = 5;
+			lifetime = 11;
+			break;
+		case 'Bananas':
+			speed = 6;
+			lifetime = 12;
+			break;
+		case 'Chocolate':
+			speed = 6;
+			lifetime = 10;
+			break;
+	}
+	return [ingredient, speed, lifetime];
+};
+
 labScene.testAnimation = function() {
+	var resultsArray = this.setResults();
     var zap = this.add.sprite(200, 460, 'electricEffect');
     zap.setScale(3.5);
     zap.anims.play('electricEffect');
@@ -42,6 +86,20 @@ labScene.testAnimation = function() {
         monster.anims.play('monsterRun');
         victim.anims.play('victimRun');
     }, [], this);
+	var monsterDeathSprite;
+	this.time.delayedCall(resultsArray[1]*1000, function() {
+		monster.anims.stop('monsterRun');
+		monster.visible = false;
+		monsterDeathSprite = this.add.sprite(monster.x, monster.y, 'zombieDeath');
+		monsterDeathSprite.anims.play('death');
+		this.tweens.add({
+			targets: monsterDeathSprite,
+			x: -100,
+			ease: 'Sine.easeIn',
+			delay: 1000,
+			duration: 500,
+		});
+	}, [], this);
 };
 
 labScene.createBubble = function(x, y, text) {

@@ -12,6 +12,7 @@ labScene.create = function() {
 	}
     var background = this.add.image(400, 300, 'labBackground');
     background.setScale(2);
+	this.add.image(550, 100, 'labSign');
     madScientistLabSprite = this.add.sprite(730, 504, 'madScientist');
     madScientistLabSprite.setScale(2);
     madScientistLabSprite.anims.play('msStand');
@@ -27,6 +28,8 @@ labScene.create = function() {
     victim.setFrame(0);
     var speechText = "Here we have our monster ready to test the new formula, and a volunteer to give it some encouragement. I'll just give it a zap.";
     this.time.delayedCall(750, function() { this.createBubble(635, 300, speechText); }, [], this);
+	this.add.text(440, 220, 'Top Speed (mph) :', { fontSize: '24px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
+	this.add.text(440, 295, 'Lifetime (seconds) :', { fontSize: '24px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
 };
 
 labScene.setResults = function() {
@@ -91,6 +94,7 @@ labScene.testAnimation = function() {
 		monster.anims.stop('monsterRun');
 		monster.visible = false;
 		monsterDeathSprite = this.add.sprite(monster.x, monster.y, 'zombieDeath');
+		monsterDeathSprite.setScale(2);
 		monsterDeathSprite.anims.play('death');
 		this.tweens.add({
 			targets: monsterDeathSprite,

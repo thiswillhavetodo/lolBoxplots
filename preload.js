@@ -74,6 +74,7 @@ preloadScene.preload = function() {
     
     this.load.image('officeBackground', 'gameassets/images/officeBackground.png');
     this.load.image('labBackground', 'gameassets/images/labBackground.png');
+	this.load.image('labSign', 'gameassets/images/labSign.png');
     this.load.image('table', 'gameassets/images/table.png');
     this.load.image('buttonLong', 'gameassets/images/button200x66blue.png');
     this.load.image('buttonLarge', 'gameassets/images/pixelBlankButton240x80.png');

@@ -161,7 +161,7 @@ preloadScene.animsCreate = function() {
 	this.anims.create({
         key: 'death',
         frames: this.anims.generateFrameNumbers('zombieDeath', { frames: [ 0, 1, 2 ] }),
-        frameRate: 3,
-        repeat: -1
+        frameRate: 6,
+        repeat: 0
     });
 };

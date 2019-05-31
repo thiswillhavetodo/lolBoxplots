@@ -58,6 +58,20 @@ preloadScene.preload = function() {
         'gameassets/images/zombieDeathTrimmed.png',
         { frameWidth: 96, frameHeight: 96 }
     ); 
+	
+	this.load.spritesheet('conveyor', 
+        'gameassets/images/conveyor_belt.png',
+        { frameWidth: 400, frameHeight: 50 }
+    );
+	
+	this.load.spritesheet('crates', 
+        'gameassets/images/crates.png',
+        { frameWidth: 64, frameHeight: 64 }
+    ); 
+	this.load.spritesheet('splatter', 
+        'gameassets/images/splatter.png',
+        { frameWidth: 400, frameHeight: 300 }
+    ); 
     //audio
     
     //music tracks
@@ -74,6 +88,7 @@ preloadScene.preload = function() {
     
     this.load.image('officeBackground', 'gameassets/images/officeBackground.png');
     this.load.image('labBackground', 'gameassets/images/labBackground.png');
+	this.load.image('blankBackground', 'gameassets/images/blankBackground.png');
 	this.load.image('labSign', 'gameassets/images/labSign.png');
     this.load.image('table', 'gameassets/images/table.png');
     this.load.image('buttonLong', 'gameassets/images/button200x66blue.png');
@@ -106,7 +121,7 @@ preloadScene.start = function() {
 preloadScene.startMuted = function() {
     mute = true;
     preloadScene.scene.stop("preload");
-	preloadScene.scene.start("lab");
+	preloadScene.scene.start("warehouse");
 };
 
 preloadScene.animsCreate = function() {
@@ -120,6 +135,12 @@ preloadScene.animsCreate = function() {
         key: 'msTalk',
         frames: this.anims.generateFrameNumbers('madScientist', { frames: [ 6, 7, 6, 7, 6, 7, 8, 7, 8, 6, 7, 6, 7, 8, 6, 7, 3, 6, 7, 6, 7] }),
         frameRate: 8,
+        repeat: -1
+    });
+	this.anims.create({
+        key: 'msWalk',
+        frames: this.anims.generateFrameNumbers('madScientist', { frames: [ 4, 0, 5 ] }),
+        frameRate: 6,
         repeat: -1
     });
     this.anims.create({
@@ -163,5 +184,17 @@ preloadScene.animsCreate = function() {
         frames: this.anims.generateFrameNumbers('zombieDeath', { frames: [ 0, 1, 2 ] }),
         frameRate: 6,
         repeat: 0
+    });
+	this.anims.create({
+        key: 'conveyorActive',
+        frames: this.anims.generateFrameNumbers('conveyor', { frames: [ 0, 1, 2, 3, 1, 2, 3, 1, 2 ] }),
+        frameRate: 16,
+        repeat: -1
+    });
+	this.anims.create({
+        key: 'conveyorActiveRight',
+        frames: this.anims.generateFrameNumbers('conveyor', { frames: [ 3, 2, 1, 0, 2, 1, 3, 2, 1 ] }),
+        frameRate: 16,
+        repeat: -1
     });
 };

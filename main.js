@@ -20,7 +20,8 @@ var possibleResponsesArray = ["Really? I just added that to the list as a joke. 
 var extraIngredient1 = {
 	name: 'none',
 	speed: 0,
-	lifetime: 0
+	lifetime: 0,
+	frame: 0
 };
 var extraIngredient2 = {
 	name: 'none',
@@ -48,6 +49,10 @@ var stemButton;
 var stemButtonLabel;
 var ingredientsButtonArray;
 var correctGraphType;
+var broken;
+var brokenStemLeafArray;
+var brokenAmount;
+var unitsOnlyArray;
 //var speechText;
 
 var mainScene = new Phaser.Scene('main');
@@ -57,7 +62,10 @@ mainScene.create = function() {
         this.shuffle(possibleIngredientsArray);
 		this.shuffle(possibleResponsesArray);
     }
+	broken = false;
 	ingredientsButtonArray = [];
+	brokenStemLeafArray = [];
+	unitsOnlyArray = [];
     var background = this.add.image(400, 300, 'officeBackground');
     background.setScale(2);
     madScientistSprite = this.add.sprite(710, 504, 'madScientist');
@@ -99,7 +107,7 @@ mainScene.nextStep = function() {
 	if (textNumber==6&&!dataTable.visible) {
 		mainScene.showData(4, 10);
 	}
-	else if (textNumber==8) {
+	else if (textNumber==8) {		
 		mainScene.createStemAndLeafPlot(lifeArray);
 	}
 	else if (textNumber==10) {
@@ -124,8 +132,11 @@ mainScene.nextStep = function() {
 		mainScene.chooseGraph(lifeArray);
 	}
 	else if (textNumber==20) {
-		
+		broken = true;
 		mainScene.createStemAndLeafPlot(lifeArray);
+	}
+	else if (textNumber==23) {
+		mainScene.chooseGraph(speedArray);
 	}
 	else {
 		speechText = mainScene.changeText();
@@ -165,7 +176,13 @@ mainScene.createBubble = function(x, y, text) {
     
     this.time.delayedCall(4000, function() {
         madScientistSprite.anims.play('msStand');
-		if (textNumber!=15) {
+		if (broken) {
+			bubbleText.text = '';	
+			if (bubbleVisible) {
+				bubbleSprite.anims.play('bubbleClose');
+			}
+		}
+		else if (textNumber!=15) {
 			nextButton.visible = true;
 			nextButtonLabel.visible = true;
 		}
@@ -328,10 +345,21 @@ mainScene.changeText = function() {
 		case 20:
 			text = "Good. Much clearer now.";
 			textNumber++;
-			break;
+			break;		
 		case 21:
 			difference = extraIngredient1.life-10;
 			text = mainScene.showDifference(difference);
+			textNumber++;
+			break;
+		case 22:
+			for (var i=0; i<unitsOnlyArray.length; i++) {
+                unitsOnlyArray[i].visible = false;   				             
+            }
+			for (var i=0; i<namesArray.length; i++) {
+                namesArray[i].visible = true; 
+				speedArray[i].visible = true; 
+            }
+			text = "Now, let's do the same with the new speed data. Again the range is quite narrow. Which graph type should we use?";
 			textNumber++;
 			break;
     }
@@ -406,10 +434,22 @@ mainScene.hideData = function(textOnly) {
 
 mainScene.chooseGraph = function(array) {
 	lineButton = this.add.image(150, 100, 'buttonLarge').setInteractive( { useHandCursor: true } );
-    lineButton.on('pointerdown', function() { this.hideGraphButtons(); this.createLinePlot(array); }, this); 
+    lineButton.on('pointerdown', function() { 
+		if (textNumber==23) {
+			broken = true;
+		}
+		this.hideGraphButtons(); 
+		this.createLinePlot(array); 
+	}, this); 
 	lineButtonLabel = this.add.text(43, 87, "Line Plot", { fontSize: '20px', fill: '#000' }).setFontFamily('Verdana');
 	stemButton = this.add.image(150, 200, 'buttonLarge').setInteractive( { useHandCursor: true } );
-    stemButton.on('pointerdown', function() { this.hideGraphButtons(); this.createStemAndLeafPlot(array); }, this); 
+    stemButton.on('pointerdown', function() { 
+		if (textNumber==19) {
+			broken = true;
+		}
+		this.hideGraphButtons(); 
+		this.createStemAndLeafPlot(array); 
+	}, this); 
 	stemButtonLabel = this.add.text(43, 187, "Stem and Leaf Plot", { fontSize: '20px', fill: '#000' }).setFontFamily('Verdana');
 };
 
@@ -527,7 +567,8 @@ mainScene.createLinePlot = function(array) {
 };
 
 mainScene.createStemAndLeafPlot = function(array) {
-    for (var i=0; i<speedArray.length; i++) {
+    
+	for (var i=0; i<speedArray.length; i++) {
         namesArray[i].visible = false;
         speedArray[i].visible = false;
         lifeArray[i].visible = false;
@@ -598,9 +639,13 @@ mainScene.createStemAndLeafPlot = function(array) {
     }
     var xPos = 202-spacing;
     var yPos = 220;
+	var xPosArray = [];
+    var yPosArray = [];
+	var unitsDisplayArray = [];
     for (var i=0; i<sortedDisplayArray.length; i++) {
         if (sortedArray[i]<10) {
             xPos+=spacing;
+			sortedDisplayArray[i].unitsText = sortedDisplayArray[i].text;
         }
         else if (sortedArray[i]<20) {
             if (sortedArray[i-1]<10) {
@@ -608,7 +653,7 @@ mainScene.createStemAndLeafPlot = function(array) {
             }
             xPos+=spacing;
             yPos = 290;
-            sortedDisplayArray[i].text = sortedDisplayArray[i].text-10;
+            sortedDisplayArray[i].unitsText = sortedDisplayArray[i].text-10;
         } 
         else if (sortedArray[i]<30) {
             if (sortedArray[i-1]<20) {
@@ -616,7 +661,7 @@ mainScene.createStemAndLeafPlot = function(array) {
             }
             xPos+=spacing;
             yPos = 360;
-            sortedDisplayArray[i].text = sortedDisplayArray[i].text-20;
+            sortedDisplayArray[i].unitsText = sortedDisplayArray[i].text-20;
         }
         else if (sortedArray[i]<40) {
             if (sortedArray[i-1]<30) {
@@ -624,20 +669,121 @@ mainScene.createStemAndLeafPlot = function(array) {
             }
             xPos+=spacing;
             yPos = 430;
-            sortedDisplayArray[i].text = sortedDisplayArray[i].text-30;
+            sortedDisplayArray[i].unitsText = sortedDisplayArray[i].text-30;
         }
-        delay+=150;
+		if (broken&&i%3==0) {
+			sortedDisplayArray[i].visible = false;
+			var brokenDataInfo = {
+				x: sortedDisplayArray[i].x,
+				y: sortedDisplayArray[i].y,
+				startX: sortedDisplayArray[i].x,
+				startY: sortedDisplayArray[i].y,
+				targetX: xPos,
+				targetY: yPos,
+				value: sortedArray[i],
+				unitValue: sortedDisplayArray[i].unitsText
+			};
+			brokenStemLeafArray.push(brokenDataInfo);
+		}
+        delay+=150;		
         this.tweens.add({
             targets: sortedDisplayArray[i],
             x: xPos,
             y: yPos,
             ease: 'Sine.easeIn',
             delay: delay,
-            duration: 500,
+            duration: 500,			
         }); 
+		if (broken&&i%3==0) {
+			
+		}
+		else {
+			xPosArray.push(xPos);
+			yPosArray.push(yPos);
+			unitsDisplayArray.push(sortedDisplayArray[i].unitsText);
+		}		
     }
-    var speechText = this.changeText();
+	console.log('Delay: '+delay);
+	console.log(xPosArray);
+	console.log(yPosArray);
+	console.log(unitsDisplayArray);
+	for (var i=0; i<unitsDisplayArray.length; i++) {        
+        var unitsOnlyText = this.add.text(xPosArray[i], yPosArray[i], unitsDisplayArray[i], { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana');
+		unitsOnlyText.alpha = 0;
+		this.tweens.add({
+            targets: unitsOnlyText,
+            alpha: 1,
+            ease: 'Sine.easeIn',
+            delay: (delay-1775)+(i*150),  
+			duration: 50
+        });    
+		unitsOnlyArray.push(unitsOnlyText);
+    }
+	for (var i=0; i<sortedDisplayArray.length; i++) {        
+        this.tweens.add({
+            targets: sortedDisplayArray[i],
+            alpha: 0,
+            ease: 'Sine.easeIn',
+            delay: (delay-1775)+(i*150),  
+			duration: 50
+        });         
+    }
+	var speechText;
+	if (broken) {
+		speechText = "Oh dear, something seems to be wrong with the software. See if you move the data where it should be.";
+		this.correctBrokenStemLeaf();
+	}
+	else {
+		speechText = this.changeText();
+	}    
     this.time.delayedCall(delay+1000, function() { this.createBubble(615, 300, speechText); }, [], this);
+};
+
+mainScene.correctBrokenStemLeaf = function() {
+	brokenAmount = 5;
+	for (var i=0; i<brokenStemLeafArray.length; i++) {
+		var brokenData = this.add.text(brokenStemLeafArray[i].x, brokenStemLeafArray[i].y, brokenStemLeafArray[i].value, { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana').setInteractive( { useHandCursor: true } );
+		brokenData.targetX = brokenStemLeafArray[i].targetX;
+		brokenData.targetY = brokenStemLeafArray[i].targetY;
+		brokenData.startX = brokenStemLeafArray[i].startX;
+		brokenData.startY = brokenStemLeafArray[i].startY;
+		brokenData.unitText = brokenStemLeafArray[i].unitValue;
+		brokenData.matched = false;
+		this.input.setDraggable(brokenData);
+		this.input.on('drag', function (pointer, gameObject, dragX, dragY) {			
+			gameObject.x = dragX;
+			gameObject.y = dragY;
+		});
+		var that = this;
+		this.input.on('dragend', function (pointer, gameObject) {
+			if ((gameObject.x>=gameObject.targetX-40)&&(gameObject.x<=gameObject.targetX+60)&&(gameObject.y>=gameObject.targetY-40)&&(gameObject.y<=gameObject.targetY+60)) {
+				gameObject.x = gameObject.targetX;
+				gameObject.y = gameObject.targetY;
+				gameObject.text = gameObject.unitText;
+				if (!gameObject.matched) {
+					brokenAmount--;
+					gameObject.matched = true;
+					console.log(brokenAmount);
+					if (brokenAmount==0) {
+						broken = false;
+						speechText = that.changeText();
+						that.createBubble(615, 300, speechText);
+					}
+				}
+				console.log(brokenAmount);
+			}
+			else {
+				console.log(gameObject.x+', '+gameObject.y+'/ '+gameObject.targetX+', '+gameObject.targetY);
+				that.tweens.add({
+					targets: gameObject,
+					x: gameObject.startX,
+					y: gameObject.startY,
+					ease: 'Sine.easeIn',					
+					duration: 500,					
+				}); 
+			}
+		});
+	}
 };
 
 mainScene.addIngredients = function() {
@@ -663,7 +809,8 @@ mainScene.addIngredients = function() {
 };
 
 mainScene.ingredientSelected = function(button) {
-    for (var i=0; i<ingredientsButtonArray.length; i++) {
+    var frame;
+	for (var i=0; i<ingredientsButtonArray.length; i++) {
 		ingredientsButtonArray[i].visible = false;
 	}
 	var newIngredient;
@@ -671,24 +818,30 @@ mainScene.ingredientSelected = function(button) {
 	bubbleSprite.anims.play('bubbleClose');	
 	if (button==1) {
         newIngredient = possibleIngredientsArray[0][0];
+		frame = possibleIngredientsArray[0][1];
 		possibleIngredientsArray.splice(0, 1);
     }
     else if (button==2) {
         newIngredient = possibleIngredientsArray[1][0];
+		frame = possibleIngredientsArray[1][1];
 		possibleIngredientsArray.splice(1, 1);
     }
     else if (button==3) {
         newIngredient = possibleIngredientsArray[2][0];
+		frame = possibleIngredientsArray[2][1];
 		possibleIngredientsArray.splice(2, 1);
     }
 	if (extraIngredient1.name=='none') {
 		extraIngredient1.name = newIngredient;
+		extraIngredient1.frame = frame;
 	}
 	else if (extraIngredient2.name=='none') {
 		extraIngredient2.name = newIngredient;
+		extraIngredient2.frame = frame;
 	}
 	else if (extraIngredient3.name=='none') {
 		extraIngredient3.name = newIngredient;
+		extraIngredient3.frame = frame;
 	}
 	console.log(extraIngredient1.name);
 	
@@ -708,7 +861,7 @@ mainScene.zoomToLab = function() {
     
     this.time.delayedCall(1600, function() { 
         mainScene.scene.stop("main");
-	    mainScene.scene.start("lab"); 
+	    mainScene.scene.start("warehouse"); 
     }, [], this);
 };
 

@@ -6,6 +6,12 @@ var treadmillTwo;
 var speedText;
 var lifeText;
 var finished;
+var readyToLeave;
+var screamSfx;
+var growlSfx;
+var treadmillSfx;
+var wooshSfx;
+var zapSfx;
 
 var labScene = new Phaser.Scene('lab');
 
@@ -15,28 +21,51 @@ labScene.create = function() {
 		extraIngredient1.name = 'Soda';
 	}
 	finished = false;
-    var background = this.add.image(400, 300, 'labBackground');
+	readyToLeave = false;
+    var background = this.add.image(512, 276, 'labBackground');
     background.setScale(2);
-	this.add.image(550, 100, 'labSign');
-    madScientistLabSprite = this.add.sprite(730, 504, 'madScientist');
+	this.add.image(850, 200, 'labSign');
+    madScientistLabSprite = this.add.sprite(880, 480, 'madScientist');
     madScientistLabSprite.setScale(2);
     madScientistLabSprite.anims.play('msStand');
-    treadmill = this.add.sprite(200, 524, 'treadmill');
+    treadmill = this.add.sprite(200, 500, 'treadmill');
     treadmill.setScale(2);
-    treadmillTwo = this.add.sprite(500, 524, 'treadmill');
+    treadmillTwo = this.add.sprite(500, 500, 'treadmill');
     treadmillTwo.setScale(2);
-    monster = this.add.sprite(200, 460, 'monsters');
+    monster = this.add.sprite(200, 436, 'monsters');
     monster.setScale(2);
     monster.setFrame(2);
-    victim = this.add.sprite(500, 460, 'victims');
+    victim = this.add.sprite(500, 436, 'victims');
     victim.setScale(2);
     victim.setFrame(0);
-    var speechText = "Here we have our monster ready to test the new formula, and a volunteer to give it some encouragement. I'll just give it a zap.";
-    this.time.delayedCall(750, function() { this.createBubble(635, 300, speechText); }, [], this);
-	this.add.text(445, 230, 'Speed (mph) :', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
-	speedText = this.add.text(590, 230, '0', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
-	this.add.text(445, 295, 'Lifetime (sec) :', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
-	lifeText = this.add.text(590, 295, '0', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
+    var speechText = jsonText.labSpeech1;
+    this.time.delayedCall(750, function() { this.createBubble(785, 276, speechText); }, [], this);
+	this.add.text(445, 206, 'Speed (mph) :', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
+	speedText = this.add.text(590, 206, '0', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
+	this.add.text(445, 271, 'Lifetime (sec) :', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
+	lifeText = this.add.text(590, 271, '0', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
+	nextButton = this.add.sprite(512, 526, 'buttonLarge').setInteractive( { useHandCursor: true  } );    
+	var that = this;
+	nextButton.on('pointerdown', function() {
+        //bubbleText.text = '';	
+		/*if (bubbleVisible) {
+			bubbleSprite.anims.play('bubbleClose');
+		}*/
+		that.time.delayedCall(500, function() {
+            labScene.nextStep();
+        }, [], this);		
+    }); 	
+	nextButton.visible = false;
+    nextButtonLabel = this.add.text(517, 526, jsonText.mainButton1, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+	nextButtonLabel.visible = false;
+	if (!mute) {
+		screamSfx = this.sound.add('scream');
+		zapSfx = this.sound.add('zap');
+		growlSfx = this.sound.add('growl');
+		wooshSfx = this.sound.add('woosh');
+		speechBubbleSfx = this.sound.add('pop');
+		treadmillSfx = this.sound.add('treadmill');			
+	}
 };
 
 labScene.setResults = function() {
@@ -54,27 +83,27 @@ labScene.setResults = function() {
 		currentNumber = 1;
 	}
 	switch (ingredient) {
-		case 'Cat Fur':
+		case jsonText.possIngredients0:
 			speed = 7;
 			lifetime = 8;
 			break;
-		case 'Ketchup':
+		case jsonText.possIngredients1:
 			speed = 4;
 			lifetime = 12;
 			break;
-		case 'Soda':
+		case jsonText.possIngredients2:
 			speed = 6;
 			lifetime = 9;
 			break;
-		case 'Slime':
+		case jsonText.possIngredients3:
 			speed = 5;
 			lifetime = 11;
 			break;
-		case 'Bananas':
+		case jsonText.possIngredients4:
 			speed = 6;
 			lifetime = 12;
 			break;
-		case 'Chocolate':
+		case jsonText.possIngredients5:
 			speed = 6;
 			lifetime = 10;
 			break;
@@ -96,13 +125,20 @@ labScene.setResults = function() {
 
 labScene.testAnimation = function() {
 	var resultsArray = this.setResults();
-    var zap = this.add.sprite(200, 460, 'electricEffect');
+    var zap = this.add.sprite(200, 436, 'electricEffect');
     zap.setScale(3.5);
     zap.anims.play('electricEffect');
+	if (!mute) {
+		zapSfx.play();
+	}
     this.time.delayedCall(500, function() {
         zap.anims.stop('electricEffect');
         zap.visible = false;
         monster.setFrame(1);
+		if (!mute) {
+			zapSfx.stop();
+			growlSfx.play( { volume: 1.5 } );
+		}
     }, [], this);
     this.time.delayedCall(800, function() { monster.setFrame(5); }, [], this);
     this.time.delayedCall(1300, function() {
@@ -110,6 +146,10 @@ labScene.testAnimation = function() {
         treadmillTwo.anims.play('treadmillActive');
         monster.anims.play('monsterRun');
         victim.anims.play('victimRun');
+		if (!mute) {
+			screamSfx.play();
+			treadmillSfx.play( { loop: true, volume: 0.75 });
+		}
     }, [], this);
 	var monsterDeathSprite;
 	this.time.delayedCall(resultsArray[2]*1000, function() {
@@ -118,6 +158,9 @@ labScene.testAnimation = function() {
 		monsterDeathSprite = this.add.sprite(monster.x, monster.y, 'zombieDeath');
 		monsterDeathSprite.setScale(2);
 		monsterDeathSprite.anims.play('death');
+		if (!mute) {
+			wooshSfx.play( { volume: 2 } );
+		}
 		this.tweens.add({
 			targets: monsterDeathSprite,
 			x: -100,
@@ -136,21 +179,21 @@ labScene.testAnimation = function() {
 			timeDisplayed++; 
 			lifeText.text = timeDisplayed;
 			if (timeDisplayed==resultsArray[2]) {
-				var speechText = "Interesting. The monster lasted "+resultsArray[2]+" seconds and reached a top speed of "+resultsArray[1]+" miles per hour.";
+				var speechText = jsonText.labSpeech2+resultsArray[2]+jsonText.labSpeech3+resultsArray[1]+jsonText.labSpeech4;
 				finished = true;
-				this.time.delayedCall(2000, function() { this.createBubble(635, 300, speechText); }, [], this);
+				this.time.delayedCall(2000, function() { this.createBubble(785, 276, speechText); }, [], this);
 			}
 		}, [], this);		
 		
 	}
 	while (counterSpeed<resultsArray[1]) {
 		counterSpeed++;
-		this.time.delayedCall(250*counterSpeed, function() { speedDisplayed++; speedText.text = speedDisplayed; }, [], this);		
+		this.time.delayedCall(500*counterSpeed, function() { speedDisplayed++; speedText.text = speedDisplayed; }, [], this);		
 	}
 };
 
 labScene.createBubble = function(x, y, text) {
-    var bubbleSprite = this.add.sprite(x, y, 'speechBubble').setInteractive( { useHandCursor: true } );
+    bubbleSprite = this.add.sprite(x, y, 'speechBubble');
     bubbleSprite.setScale(2);
     bubbleSprite.setTint(0xfeffb1);
     bubbleSprite.on('animationcomplete', function (anim, frame) {
@@ -163,36 +206,46 @@ labScene.createBubble = function(x, y, text) {
     bubbleSprite.on('animationcomplete_bubbleClose', function () {
         bubbleSprite.destroy();
     });
-    var bubbleText = this.add.text(x, y-20, text, { fontSize: '26px', fill: '#000', wordWrap: { width: 320, useAdvancedWrap: true } }).setFontFamily('Verdana').setOrigin(0.5);
+    bubbleText = this.add.text(x, y-20, text, { fontSize: '26px', fill: '#000', wordWrap: { width: 320, useAdvancedWrap: true } }).setFontFamily('Verdana').setOrigin(0.5);
     bubbleText.visible = false;
     
     this.time.delayedCall(250, function() {
         bubbleText.visible = true;
         madScientistLabSprite.anims.play('msTalk');
         if (!mute) {
-            //speechBubbleSfx.play();
+            speechBubbleSfx.play();
         }
-    }, [], this);
-    var that = this;
-    bubbleSprite.on('pointerdown', function() {
-        bubbleText.text = '';
-        bubbleSprite.anims.play('bubbleClose');
-        madScientistLabSprite.anims.play('msStand');
-        that.time.delayedCall(500, function() {
-			if (!finished) {
-            	labScene.testAnimation();
-			}
-			else {
-				var speechText = "We'll collect the results from the other monsters and view them together.";				
-    			that.createBubble(635, 300, speechText);
-				that.time.delayedCall(8000, function() { 
-					labScene.scene.stop("lab");
-	    			labScene.scene.start("main"); 
-				}, [], this);
-			}
-        }, [], this);
-    }); 
+    }, [], this);    
     this.time.delayedCall(6000, function() {
         madScientistLabSprite.anims.play('msStand');
+		nextButton.visible = true;
+		nextButtonLabel.visible = true;
     }, [], this);
+};
+
+labScene.nextStep = function() {
+	bubbleText.text = '';
+	bubbleSprite.anims.play('bubbleClose');
+	madScientistLabSprite.anims.play('msStand');
+	nextButton.visible = false;
+	nextButtonLabel.visible = false;
+	this.time.delayedCall(500, function() {
+		if (!finished) {
+			labScene.testAnimation();
+		}
+		else if (!readyToLeave) {
+			readyToLeave = true;
+			var speechText = jsonText.labSpeech5;				
+			this.createBubble(785, 276, speechText);			
+		}
+		else {
+			this.time.delayedCall(500, function() { 
+				if (!mute) {
+					treadmillSfx.stop();
+				}
+				labScene.scene.stop("lab");
+				labScene.scene.start("main"); 
+			}, [], this);
+		}
+	}, [], this);
 };

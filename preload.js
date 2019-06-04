@@ -1,13 +1,16 @@
 /*global Phaser*/
 var mute;
+var jsonText;
+var possibleResponsesArray;
+var possibleIngredientsArray;
 
 var preloadScene = new Phaser.Scene('preload');
 
 preloadScene.preload = function() {
 	
-	var logo = this.add.image(400, 200, 'rubbleLogoLarge');
+	var logo = this.add.image(512, 200, 'rubbleLogoLarge');
 	logo.alpha = 0;
-	this.add.text(335, 350, "Loading...", { fontSize: '38px', fill: '#fff' }).setFontFamily('Arial');
+	this.add.text(447, 350, "Loading...", { fontSize: '38px', fill: '#fff' }).setFontFamily('Arial');
 	this.tweens.add({
         targets: logo,
         alpha: 1,
@@ -80,19 +83,48 @@ preloadScene.preload = function() {
     ]);*/
     
     //sfx
-    /*this.load.audio('match', [
-        'gameassets/audio/PowUp_03.mp3',
-    ]);*/
-    
+    this.load.audio('pop', [
+        'gameassets/audio/pop.mp3',
+    ]);
+	this.load.audio('conveyor', [
+        'gameassets/audio/conveyor_belt.mp3',
+    ]);
+	this.load.audio('growl', [
+        'gameassets/audio/growl.mp3',
+    ]);
+    this.load.audio('zap', [
+        'gameassets/audio/laserPulse.mp3',
+    ]);
+	this.load.audio('treadmill', [
+        'gameassets/audio/treadmill.mp3',
+    ]);
+	this.load.audio('win', [
+        'gameassets/audio/win.mp3',
+    ]);
+	this.load.audio('woosh', [
+        'gameassets/audio/woosh.mp3',
+    ]);
+	this.load.audio('scream', [
+        'gameassets/audio/scream.mp3',
+    ]);
+	this.load.audio('squelch', [
+        'gameassets/audio/squelch.mp3',
+    ]);
+	this.load.audio('smash', [
+        'gameassets/audio/woodSmash.mp3',
+    ]);
     //images
     
     this.load.image('officeBackground', 'gameassets/images/officeBackground.png');
     this.load.image('labBackground', 'gameassets/images/labBackground.png');
 	this.load.image('blankBackground', 'gameassets/images/blankBackground.png');
+	this.load.image('menuBackground', 'gameassets/images/titleScreen.png');
 	this.load.image('labSign', 'gameassets/images/labSign.png');
     this.load.image('table', 'gameassets/images/table.png');
     this.load.image('buttonLong', 'gameassets/images/button200x66blue.png');
     this.load.image('buttonLarge', 'gameassets/images/pixelBlankButton240x80.png');
+	
+	this.load.json('text', 'gameassets/js/gameText.json');
 };
 
 preloadScene.create = function() {
@@ -102,26 +134,31 @@ preloadScene.create = function() {
     catch(err) {
         saveDataAvailable = false;
     }*/
+	var lang = "en";
+	jsonText = this.cache.json.get('text').en;
+	console.log(jsonText);
     this.animsCreate();
-	
-	var startButton = this.add.sprite(400, 375, 'buttonLarge').setInteractive( { useHandCursor: true  } );
+	possibleIngredientsArray = [[jsonText.possIngredients0, 0], [jsonText.possIngredients1, 1], [jsonText.possIngredients2, 2], [jsonText.possIngredients3, 3], [jsonText.possIngredients4, 4], [jsonText.possIngredients5, 5]];
+	possibleResponsesArray = [jsonText.possResponses0, jsonText.possResponses1, jsonText.possResponses2];
+	var startButton = this.add.sprite(512, 375, 'buttonLarge').setInteractive( { useHandCursor: true  } );
     startButton.on('pointerdown', this.start); 
-    this.add.text(350, 350, "Play!", { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 });
-    var startMutedButton = this.add.sprite(400, 475, 'buttonLarge').setInteractive( { useHandCursor: true  } );
+    //this.add.text(462, 350, "Play!", { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 });
+	this.add.text(517, 375, jsonText.pre1, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+    var startMutedButton = this.add.sprite(512, 475, 'buttonLarge').setInteractive( { useHandCursor: true  } );
     startMutedButton.on('pointerdown', this.startMuted); 
-    this.add.text(295, 450, "Play Muted", { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 });
+    this.add.text(517, 475, jsonText.pre2, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
 	
 };
 
 preloadScene.start = function() {
     preloadScene.scene.stop("preload");
-	preloadScene.scene.start("main");
+	preloadScene.scene.start("menu");
 };
 
 preloadScene.startMuted = function() {
     mute = true;
     preloadScene.scene.stop("preload");
-	preloadScene.scene.start("warehouse");
+	preloadScene.scene.start("menu");
 };
 
 preloadScene.animsCreate = function() {

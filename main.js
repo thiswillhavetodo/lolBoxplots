@@ -1,7 +1,7 @@
 /*global Phaser*/
 var madScientistSprite;
 var bubbleSprite;
-var textNumber = 5;
+var textNumber = 0;
 var namesArray = [];
 var speedArray = [];
 var lifeArray = [];
@@ -15,8 +15,6 @@ var speedArray3 = [];
 var lifeArray3 = [];
 var stemPlotArray = [];
 var sortedDisplayArray = [];
-var possibleIngredientsArray = [['Cat Fur', 0], ['Ketchup', 1], ['Soda', 2], ['Slime', 3], ['Bananas', 4], ['Chocolate', 5]];
-var possibleResponsesArray = ["Really? I just added that to the list as a joke. Still, I suppose it's worth a try.", "That's certainly an interesting choice. I do hope you're taking this seriously.", "Not my first choice, but what's the worst that can happen?"];
 var extraIngredient1 = {
 	name: 'none',
 	speed: 0,
@@ -51,8 +49,11 @@ var ingredientsButtonArray;
 var correctGraphType;
 var broken;
 var brokenStemLeafArray;
+var brokenLinePlotArray;
 var brokenAmount;
+var brokenType;
 var unitsOnlyArray;
+var winSfx;
 //var speechText;
 
 var mainScene = new Phaser.Scene('main');
@@ -65,23 +66,24 @@ mainScene.create = function() {
 	broken = false;
 	ingredientsButtonArray = [];
 	brokenStemLeafArray = [];
+	brokenLinePlotArray = [];
 	unitsOnlyArray = [];
-    var background = this.add.image(400, 300, 'officeBackground');
+    var background = this.add.image(512, 276, 'officeBackground');
     background.setScale(2);
-    madScientistSprite = this.add.sprite(710, 504, 'madScientist');
+    madScientistSprite = this.add.sprite(810, 480, 'madScientist');
     madScientistSprite.setScale(2);
     madScientistSprite.anims.play('msStand');
     var speechText = this.changeText();
-    this.createBubble(615, 300, speechText);
-    var computer = this.add.image(200, 476, 'computer');
+    this.createBubble(715, 276, speechText);
+    var computer = this.add.image(200, 452, 'computer');
     computer.setScale(0.65);
-    var table = this.add.image(200, 560, 'table');
+    var table = this.add.image(200, 536, 'table');
     table.setScale(1.25);   
 	dataTable = this.add.sprite(320, 280, 'computer');
     dataTable.setFrame(1);
     dataTable.setScale(4);
 	dataTable.visible = false;
-	nextButton = this.add.sprite(400, 550, 'buttonLarge').setInteractive( { useHandCursor: true  } );    
+	nextButton = this.add.sprite(512, 530, 'buttonLarge').setInteractive( { useHandCursor: true  } );    
 	var that = this;
 	nextButton.on('pointerdown', function() {
         bubbleText.text = '';	
@@ -93,8 +95,12 @@ mainScene.create = function() {
         }, [], this);		
     }); 	
 	nextButton.visible = false;
-    nextButtonLabel = this.add.text(355, 525, "Next", { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 });
+    nextButtonLabel = this.add.text(517, 530, jsonText.mainButton1, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
 	nextButtonLabel.visible = false;
+	if (!mute) {		
+		winSfx = this.sound.add('win');
+		speechBubbleSfx = this.sound.add('pop');			
+	}	
 };
 
 mainScene.nextStep = function() {	
@@ -113,14 +119,14 @@ mainScene.nextStep = function() {
 	else if (textNumber==10) {
 		mainScene.createStemAndLeafPlot(speedArray);
 	}
-	else if (textNumber==12) {
+	else if (textNumber==12) {		
 		mainScene.createLinePlot(speedArray);
 	}
 	else if (textNumber==14) {                
 		mainScene.hideData();
 		mainScene.addIngredients();
 		speechText = mainScene.changeText();
-		mainScene.createBubble(615, 300, speechText);
+		mainScene.createBubble(715, 276, speechText);
 	}
 	else if (textNumber==16) {
 		mainScene.zoomToLab();
@@ -129,22 +135,55 @@ mainScene.nextStep = function() {
 		mainScene.showData(extraIngredient1.speed, extraIngredient1.lifetime);
 	}
 	else if (textNumber==19) {
+		for (var i=0; i<lifeArray.length; i++) {
+			namesArray[i].visible = false;   
+			lifeArray[i].visible = false;                
+		}
 		mainScene.chooseGraph(lifeArray);
 	}
 	else if (textNumber==20) {
+		mainScene.hideData(true);
 		broken = true;
 		mainScene.createStemAndLeafPlot(lifeArray);
 	}
 	else if (textNumber==23) {
 		mainScene.chooseGraph(speedArray);
 	}
+	else if (textNumber==24) {
+		for (var i=0; i<unitsOnlyArray.length; i++) {
+			unitsOnlyArray[i].visible = false;   				             
+		}
+		for (var i=0; i<stemPlotArray.length; i++) {
+			stemPlotArray[i].visible = false;
+		}
+		for (var i=0; i<sortedDisplayArray.length; i++) {
+			sortedDisplayArray[i].visible = false;
+		}
+		mainScene.hideData(true);
+		broken = true;
+		mainScene.createLinePlot(speedArray);
+	}
+	else if (textNumber==28) {
+		mainScene.reset();
+		mainScene.scene.stop("main");
+		mainScene.scene.start("menu");
+	}
 	else {
 		speechText = mainScene.changeText();
-		mainScene.createBubble(615, 300, speechText);
+		mainScene.createBubble(715, 276, speechText);
 	}
 	/*this.time.delayedCall(500, function() {
 		
 	}, [], this);   */ 
+};
+
+mainScene.reset = function() {
+	textNumber = 0;
+	namesArray = [];
+	speedArray = [];
+	lifeArray = [];
+	stemPlotArray = [];
+	sortedDisplayArray = [];
 };
 
 mainScene.createBubble = function(x, y, text) {
@@ -170,11 +209,11 @@ mainScene.createBubble = function(x, y, text) {
         bubbleText.visible = true;
         madScientistSprite.anims.play('msTalk');
         if (!mute) {
-            //speechBubbleSfx.play();
+            speechBubbleSfx.play();
         }
     }, [], this);    
     
-    this.time.delayedCall(4000, function() {
+    this.time.delayedCall(8000, function() {  //make sure to reset to 8000 after testing
         madScientistSprite.anims.play('msStand');
 		if (broken) {
 			bubbleText.text = '';	
@@ -184,6 +223,12 @@ mainScene.createBubble = function(x, y, text) {
 		}
 		else if (textNumber!=15) {
 			nextButton.visible = true;
+			if (textNumber==28) { 
+				if (!mute) {
+					winSfx.play();
+				}
+				nextButtonLabel.text = jsonText.mainButton2;				
+			}
 			nextButtonLabel.visible = true;
 		}
     }, [], this);
@@ -193,35 +238,35 @@ mainScene.changeText = function() {
 	var text, difference;
     switch (textNumber) {
         case 0:
-            text = "Ah, hello there. You must be my latest assistant. Please, allow me to introduce myself.";
+            text = jsonText.mainText0;
             textNumber++;
             break;
         case 1:
-            text = "My name is Professor David Structo, and I am founder and C.E.O of Build A Monster Inc.";
+            text = jsonText.mainText1;
             textNumber++;
             break;
         case 2:
-            text = "Here at Build A Monster Inc we don't want to build just any monster. We insist on building the best monster we can.";
+            text = jsonText.mainText2;
             textNumber++;
             break;
         case 3:
-            text = "That means we test our monsters to breaking point and beyond. Then we gather up all that lovely, lovely data.";
+            text = jsonText.mainText3;
             textNumber++;
             break;
         case 4:
-            text = "Your job is to help me make sense of that data, and also clean up the mess.";
+            text = jsonText.mainText4;
             textNumber++;
             break;
         case 5:
-            text = "The latest batch of test data is on the screen. Let's take a close look and see how our monsters performed.";
+            text = jsonText.mainText5;
             textNumber++;
             break;
         case 6:
-            text = "Well, looking at the raw data in a table doesn't tell us much. We need a better way to show our data.";
+            text = jsonText.mainText6;
             textNumber++;
             break;
         case 7:
-            text = "Let's look at the monster lifetime data first. We'll use a stem and leaf plot to represent the information.";
+            text = jsonText.mainText7;
             textNumber++;
             for (var i=0; i<speedArray.length; i++) {
                 speedArray[i].visible = false;
@@ -233,13 +278,20 @@ mainScene.changeText = function() {
                 });
             }
             break;
-        case 8:
-            text = "The stem on the left shows the tens and the right shows the units. Now we can see that most of our monsters lasted between 10 and 30 seconds.";
-            textNumber++;
+        case 8: //add more info on stem & leaf plots
+            text = jsonText.mainText8;
+            textNumber+=0.5;
+            break;
+		case 8.5:
+            text = jsonText.mainText8_5;
+            textNumber+=0.5;
             break;
         case 9:
-            text = "Okay, now let's take a look at the monster speed data.";
+            text = jsonText.mainText9;
             textNumber++;
+			for (var i=0; i<unitsOnlyArray.length; i++) {
+                unitsOnlyArray[i].visible = false;   				             
+            }
             for (var i=0; i<stemPlotArray.length; i++) {
                 stemPlotArray[i].visible = false;
             }
@@ -252,12 +304,15 @@ mainScene.changeText = function() {
             }
             break;
         case 10:
-            text = "Well, that's no good at all. With such a small data range the stem and leaf plot doesn't tell us anything useful.";
+            text = jsonText.mainText10;
             textNumber++;
             break;
         case 11:
-            text = "We need to represent the data in a different way. Let's try a line plot instead.";
-            textNumber++;
+            text = jsonText.mainText11;
+            textNumber+=0.5;
+			for (var i=0; i<unitsOnlyArray.length; i++) {
+                unitsOnlyArray[i].visible = false;   				             
+            }
             for (var i=0; i<stemPlotArray.length; i++) {
                 stemPlotArray[i].visible = false;
             }
@@ -269,6 +324,10 @@ mainScene.changeText = function() {
                 speedArray[i].visible = true;
             }
             break;
+		case 11.5:
+            text = jsonText.mainText11_5;
+            textNumber+=0.5;
+            break;
         case 12:
             var speedArrayValues = [];
             for (var i = 0; i<speedArray.length; i++) {
@@ -278,22 +337,22 @@ mainScene.changeText = function() {
             var mode1 = modeArray[0];
             console.log(mode1);
             if (modeArray.length==1) {
-                text = "Now that is much better. We can see that the most common speed was "+mode1+" miles per hour.";
+                text = jsonText.mainText12a1+modeArray[0]+jsonText.mainText12a2;
             }
             else if (modeArray.length==2) {
-                text = "Now that is much better. We can see that the most common speeds were "+modeArray[0]+" and "+modeArray[1]+" miles per hour.";
+                text = jsonText.mainText12b1+modeArray[0]+jsonText.mainText12b2+modeArray[1]+jsonText.mainText12b3;
             }
             else if (modeArray.length==3) {
-                text = "Now that is much better. We can see that the most common speeds were "+modeArray[0]+", "+modeArray[1]+" and "+modeArray[2]+" miles per hour.";
+                text = jsonText.mainText12b1+modeArray[2]+", "+modeArray[0]+jsonText.mainText12b2+modeArray[1]+jsonText.mainText12b3;
             }
             textNumber++;
             break;
         case 13:
-            text = "Now we can start trying to improve on our monster formula. We will add ingredients to our secret formula and see what effect they have.";
+            text = jsonText.mainText13;
             textNumber++;
             break;
         case 14:
-            text = "Choose an ingredient to add.";
+            text = jsonText.mainText14;
             textNumber++;
             break;
 		case 15:
@@ -302,7 +361,7 @@ mainScene.changeText = function() {
             textNumber++;
 			break;
 		case 16:
-			text = "Now let's see the full set of results from our tests.";			
+			text = jsonText.mainText16;			
 			namesArray = [];
 			speedArrayOriginal = speedArray;
 			speedArray = [];
@@ -311,7 +370,7 @@ mainScene.changeText = function() {
             textNumber++;
 			break;
 		case 17:
-			text = "Again, we need to show the data in a graph to make sense of it. Let's look at just the lifetime data.";
+			text = jsonText.mainText17;
             textNumber++;
 			for (var i=0; i<speedArray.length; i++) {
                 speedArray[i].visible = false;
@@ -323,44 +382,84 @@ mainScene.changeText = function() {
                 });
             }
 			break;
-		case 18:
-			for (var i=0; i<lifeArray.length; i++) {
-                namesArray[i].visible = false;   
-				lifeArray[i].visible = false;                
-            }
-			text = "This data has quite a broad range. Which type of graph should we use?";
+		case 18:			
+			text = jsonText.mainText18;
             textNumber++;
 			break;
 		case 19:
 			if (correctGraphType) {
-				text = "Good, I think that's the best way to show this data.";
+				text = jsonText.mainText19a;
 				textNumber+=2;
 			}
-			else {
-				mainScene.hideData(false);
-				text = "Actually, I think a stem and leaf plot would work better here. Let's try that instead.";
+			else {				
+				text = jsonText.mainText19b;
 				textNumber++;
 			}            
 			break;
 		case 20:
-			text = "Good. Much clearer now.";
+			text = jsonText.mainText20;
 			textNumber++;
 			break;		
 		case 21:
-			difference = extraIngredient1.life-10;
+			difference = extraIngredient1.lifetime-10;
+			console.log(difference);
 			text = mainScene.showDifference(difference);
+			console.log(text);
 			textNumber++;
 			break;
 		case 22:
 			for (var i=0; i<unitsOnlyArray.length; i++) {
                 unitsOnlyArray[i].visible = false;   				             
             }
+			for (var i=0; i<lifeArray.length; i++) {                  
+				lifeArray[i].visible = false;                
+            }
+			for (var i=0; i<brokenStemLeafArray.length; i++) {
+                brokenStemLeafArray[i].visible = false;   				             
+            }			
+			for (var i=0; i<stemPlotArray.length; i++) {
+                stemPlotArray[i].visible = false;
+            }
+            for (var i=0; i<sortedDisplayArray.length; i++) {
+                sortedDisplayArray[i].visible = false;
+            }
 			for (var i=0; i<namesArray.length; i++) {
                 namesArray[i].visible = true; 
 				speedArray[i].visible = true; 
             }
-			text = "Now, let's do the same with the new speed data. Again the range is quite narrow. Which graph type should we use?";
+			text = jsonText.mainText22;
 			textNumber++;
+			break;
+		case 23:
+			if (correctGraphType) {
+				text = jsonText.mainText23a;
+				textNumber+=2;
+			}
+			else {
+				mainScene.hideData(true);				
+				text = jsonText.mainText23b;
+				textNumber++;
+			}            
+			break;
+		case 24:
+			text = jsonText.mainText24;
+			textNumber++;
+			break;
+		case 25:
+			difference = extraIngredient1.speed-4;
+			console.log(difference);
+			text = mainScene.showDifference(difference);
+			console.log(text);
+			textNumber++;
+			break;
+		case 26: 
+			mainScene.hideData(false);
+			text = mainScene.finalResultText();
+			textNumber++;
+			break;
+		case 27:
+			text = jsonText.mainText27;
+			textNumber++;			
 			break;
     }
     return text;
@@ -402,20 +501,61 @@ mainScene.showData = function(avSpeed, avLife) {
 mainScene.showDifference = function(difference) {
 	var response;
 	if (difference>1) {
-		response = "There's a definite improvement on the original formula. Good choice.";
+		response = jsonText.diffResponse1;
 	}
 	else if (difference==1) {
-		response = "Not much difference from our original formula, maybe a little higher.";
+		response = jsonText.diffResponse2;
 	}
 	else if (difference==0) {
-		response = "I can't really see that there's any difference at all there.";
+		response = jsonText.diffResponse3;
 	}
 	else if (difference==-1) {
-		response = "Not much difference from our original formula, maybe a little lower.";
+		response = jsonText.diffResponse4;
 	}
 	else if (difference<-1) {
-		response = "This is not what we were hoping for at all. The new ingredient reduced performance.";
+		response = jsonText.diffResponse5;
 	}
+	console.log(response);
+	return response;
+};
+
+mainScene.finalResultText = function() { 
+	var response, response1, response2;
+	var diff1 = extraIngredient1.lifetime-10;
+	var diff2 = extraIngredient1.speed-4;
+	var responseIntro = jsonText.finalResponse1+extraIngredient1.name+jsonText.finalResponse2;
+	if (diff1>1) {
+		response1 = jsonText.finalResponse3;
+	}
+	else if (diff1==1) {
+		response1 = jsonText.finalResponse4;
+	}
+	else if (diff1==0) {
+		response1 = jsonText.finalResponse4;
+	}
+	else if (diff1==-1) {
+		response1 = jsonText.finalResponse4;
+	}
+	else if (diff1<-1) {
+		response1 = jsonText.finalResponse5;
+	}
+	if (diff2>1) {
+		response2 = jsonText.finalResponse6;
+	}
+	else if (diff2==1) {
+		response2 = jsonText.finalResponse7;
+	}
+	else if (diff2==0) {
+		response2 = jsonText.finalResponse7;
+	}
+	else if (diff2==-1) {
+		response2 = jsonText.finalResponse7;
+	}
+	else if (diff2<-1) {
+		response2 = jsonText.finalResponse8;
+	}
+	response = responseIntro+response1+response2;
+	console.log(response);
 	return response;
 };
 
@@ -433,7 +573,7 @@ mainScene.hideData = function(textOnly) {
 };
 
 mainScene.chooseGraph = function(array) {
-	lineButton = this.add.image(150, 100, 'buttonLarge').setInteractive( { useHandCursor: true } );
+	lineButton = this.add.image(200, 123, 'buttonLarge').setInteractive( { useHandCursor: true } );
     lineButton.on('pointerdown', function() { 
 		if (textNumber==23) {
 			broken = true;
@@ -441,8 +581,8 @@ mainScene.chooseGraph = function(array) {
 		this.hideGraphButtons(); 
 		this.createLinePlot(array); 
 	}, this); 
-	lineButtonLabel = this.add.text(43, 87, "Line Plot", { fontSize: '20px', fill: '#000' }).setFontFamily('Verdana');
-	stemButton = this.add.image(150, 200, 'buttonLarge').setInteractive( { useHandCursor: true } );
+	lineButtonLabel = this.add.text(93, 110, jsonText.graphButtonLabel1, { fontSize: '20px', fill: '#000' }).setFontFamily('Verdana');
+	stemButton = this.add.image(200, 223, 'buttonLarge').setInteractive( { useHandCursor: true } );
     stemButton.on('pointerdown', function() { 
 		if (textNumber==19) {
 			broken = true;
@@ -450,7 +590,7 @@ mainScene.chooseGraph = function(array) {
 		this.hideGraphButtons(); 
 		this.createStemAndLeafPlot(array); 
 	}, this); 
-	stemButtonLabel = this.add.text(43, 187, "Stem and Leaf Plot", { fontSize: '20px', fill: '#000' }).setFontFamily('Verdana');
+	stemButtonLabel = this.add.text(93, 210, jsonText.graphButtonLabel2, { fontSize: '20px', fill: '#000' }).setFontFamily('Verdana');
 };
 
 mainScene.hideGraphButtons = function() {
@@ -500,6 +640,7 @@ mainScene.createLinePlot = function(array) {
     }
     console.log(sortedDisplayArray);
     line  = this.add.graphics();
+	line.visible = true;
     line.lineStyle(1, 0x008106, 1);
     line.beginPath();
     line.moveTo(100, 450);
@@ -529,9 +670,24 @@ mainScene.createLinePlot = function(array) {
         }
         else {
             yPos = 425;
-        }
-        xPosArray.push(xPos);
-        yPosArray.push(yPos);
+        }        
+		if (broken&&i%3==0) {
+			sortedDisplayArray[i].visible = false;
+			var brokenDataInfo = {
+				x: sortedDisplayArray[i].x,
+				y: sortedDisplayArray[i].y,
+				startX: sortedDisplayArray[i].x,
+				startY: sortedDisplayArray[i].y,
+				targetX: xPos,
+				targetY: yPos,
+				value: sortedArray[i],				
+			};
+			brokenLinePlotArray.push(brokenDataInfo);
+		}
+		else {
+			xPosArray.push(xPos);
+        	yPosArray.push(yPos);
+		}
         delay+=150;
         this.tweens.add({
             targets: sortedDisplayArray[i],
@@ -552,22 +708,89 @@ mainScene.createLinePlot = function(array) {
     for (var i=0; i<xPosArray.length; i++) {
         var xText = this.add.text(xPosArray[i], yPosArray[i], 'X', { fontSize: '22px', fill: '#008106' }).setFontFamily('Arial').setOrigin(0.5);
         xText.alpha = 0;
-        this.tweens.add({
-            targets: xText,
-            alpha: 1,
-            ease: 'Sine.easeIn',
-            delay: 1650+(i*150),
-            duration: 50,
-        }); 
-        xArray.push(xText);
+		this.tweens.add({
+			targets: xText,
+			alpha: 1,
+			ease: 'Sine.easeIn',
+			delay: 1675+(i*150),
+			duration: 25,
+		}); 
+		xArray.push(xText);
     }
-	var speechText = this.changeText();
-    this.time.delayedCall(5000, function() { this.createBubble(615, 300, speechText); }, [], this);
+	var speechText;
+	if (broken) {
+		speechText = jsonText.lineBrokenResponse;
+		this.correctBrokenLinePlot();
+	}
+	else {
+		speechText = this.changeText();
+	}  
+    this.time.delayedCall(5000, function() { this.createBubble(715, 276, speechText); }, [], this);
     console.log(xArray);
 };
 
+mainScene.correctBrokenLinePlot = function() {
+	brokenType = 'lp';
+	brokenAmount = 5;
+	for (var i=0; i<brokenLinePlotArray.length; i++) {
+		var brokenData = this.add.text(brokenLinePlotArray[i].x, brokenLinePlotArray[i].y, brokenLinePlotArray[i].value, { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana').setInteractive( { useHandCursor: true } );
+		brokenData.targetX = brokenLinePlotArray[i].targetX;
+		brokenData.targetY = brokenLinePlotArray[i].targetY;
+		brokenData.startX = brokenLinePlotArray[i].startX;
+		brokenData.startY = brokenLinePlotArray[i].startY;
+		brokenData.unitText = brokenLinePlotArray[i].unitValue;
+		brokenData.matched = false;
+		this.input.setDraggable(brokenData);
+		this.input.on('drag', function (pointer, gameObject, dragX, dragY) {			
+			gameObject.x = dragX;
+			gameObject.y = dragY;
+			gameObject.matched = false;
+		});
+		var that = this;
+		this.input.on('dragend', function (pointer, gameObject) {
+			if ((gameObject.x>=gameObject.targetX-25)&&(gameObject.x<=gameObject.targetX+45)&&(gameObject.y>=90)&&(gameObject.y<=510)) {				
+				gameObject.x = gameObject.targetX-11;
+				gameObject.y = gameObject.targetY-11;							
+				//gameObject.text = 'X';	
+				var finalPosX = that.add.text(gameObject.targetX, gameObject.targetY, 'X', { fontSize: '22px', fill: '#008106' }).setFontFamily('Arial').setOrigin(0.5);
+				console.log(finalPosX);
+				xArray.push(finalPosX);
+				console.log(gameObject);
+				if (!gameObject.matched) {
+					
+					gameObject.visible = false;	
+					brokenAmount--;
+					gameObject.matched = true;
+					console.log(brokenAmount);
+					if (brokenAmount==0&&broken) {
+						broken = false;
+						speechText = that.changeText();
+						that.createBubble(715, 276, speechText);
+					}
+				}
+				console.log(brokenAmount);
+			}
+			else {
+				console.log(gameObject.x+', '+gameObject.y+'/ '+gameObject.targetX+', '+gameObject.targetY);
+				that.tweens.add({
+					targets: gameObject,
+					x: gameObject.startX,
+					y: gameObject.startY,
+					ease: 'Sine.easeIn',					
+					duration: 500,					
+				}); 
+			}
+		});
+	}
+};
+
 mainScene.createStemAndLeafPlot = function(array) {
-    
+    if (array==lifeArray) {		
+		correctGraphType = true;
+	}
+	else {		
+		correctGraphType = false;
+	}
 	for (var i=0; i<speedArray.length; i++) {
         namesArray[i].visible = false;
         speedArray[i].visible = false;
@@ -590,7 +813,7 @@ mainScene.createStemAndLeafPlot = function(array) {
         sortedDisplayArray.push(sortedDisplay);
         if (sortedArray[i]<10) {
             adjuster+=8;
-        }
+        }		
     }
     console.log(sortedDisplayArray);
     var max = sortedArray[sortedArray.length-1];
@@ -628,7 +851,12 @@ mainScene.createStemAndLeafPlot = function(array) {
     }
     else {
         delay = 450;
-        spacing = 24;
+		if (max>=10&&max<=20) {
+        	spacing = 28;
+		}
+		else if (max<10) {
+			spacing = 24;
+		}
     }
     
     if (delay==1000) {
@@ -694,12 +922,12 @@ mainScene.createStemAndLeafPlot = function(array) {
             delay: delay,
             duration: 500,			
         }); 
+		xPosArray.push(xPos);
+		yPosArray.push(yPos);
 		if (broken&&i%3==0) {
-			
+			unitsDisplayArray.push('');
 		}
-		else {
-			xPosArray.push(xPos);
-			yPosArray.push(yPos);
+		else {			
 			unitsDisplayArray.push(sortedDisplayArray[i].unitsText);
 		}		
     }
@@ -714,7 +942,7 @@ mainScene.createStemAndLeafPlot = function(array) {
             targets: unitsOnlyText,
             alpha: 1,
             ease: 'Sine.easeIn',
-            delay: (delay-1775)+(i*150),  
+            delay: (delay-1750)+(i*150),  
 			duration: 50
         });    
 		unitsOnlyArray.push(unitsOnlyText);
@@ -730,17 +958,18 @@ mainScene.createStemAndLeafPlot = function(array) {
     }
 	var speechText;
 	if (broken) {
-		speechText = "Oh dear, something seems to be wrong with the software. See if you move the data where it should be.";
+		speechText = jsonText.stemBrokenResponse;
 		this.correctBrokenStemLeaf();
 	}
 	else {
 		speechText = this.changeText();
 	}    
-    this.time.delayedCall(delay+1000, function() { this.createBubble(615, 300, speechText); }, [], this);
+    this.time.delayedCall(delay+1000, function() { this.createBubble(715, 276, speechText); }, [], this);
 };
 
 mainScene.correctBrokenStemLeaf = function() {
 	brokenAmount = 5;
+	brokenType = 's&l';
 	for (var i=0; i<brokenStemLeafArray.length; i++) {
 		var brokenData = this.add.text(brokenStemLeafArray[i].x, brokenStemLeafArray[i].y, brokenStemLeafArray[i].value, { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana').setInteractive( { useHandCursor: true } );
 		brokenData.targetX = brokenStemLeafArray[i].targetX;
@@ -755,34 +984,37 @@ mainScene.correctBrokenStemLeaf = function() {
 			gameObject.y = dragY;
 		});
 		var that = this;
-		this.input.on('dragend', function (pointer, gameObject) {
-			if ((gameObject.x>=gameObject.targetX-40)&&(gameObject.x<=gameObject.targetX+60)&&(gameObject.y>=gameObject.targetY-40)&&(gameObject.y<=gameObject.targetY+60)) {
-				gameObject.x = gameObject.targetX;
-				gameObject.y = gameObject.targetY;
-				gameObject.text = gameObject.unitText;
-				if (!gameObject.matched) {
-					brokenAmount--;
-					gameObject.matched = true;
-					console.log(brokenAmount);
-					if (brokenAmount==0) {
-						broken = false;
-						speechText = that.changeText();
-						that.createBubble(615, 300, speechText);
+		if (brokenType=='s&l') {
+			this.input.on('dragend', function (pointer, gameObject) {
+				if ((gameObject.x>=gameObject.targetX-40)&&(gameObject.x<=gameObject.targetX+60)&&(gameObject.y>=gameObject.targetY-40)&&(gameObject.y<=gameObject.targetY+60)) {
+					gameObject.x = gameObject.targetX;
+					gameObject.y = gameObject.targetY;
+					gameObject.text = gameObject.unitText;
+					if (!gameObject.matched) {
+						brokenAmount--;					
+						gameObject.matched = true;
+						sortedDisplayArray.push(gameObject);
+						console.log(brokenAmount);
+						if (brokenAmount==0&&broken) {
+							broken = false;
+							speechText = that.changeText();
+							that.createBubble(715, 276, speechText);
+						}
 					}
+					console.log(brokenAmount);
 				}
-				console.log(brokenAmount);
-			}
-			else {
-				console.log(gameObject.x+', '+gameObject.y+'/ '+gameObject.targetX+', '+gameObject.targetY);
-				that.tweens.add({
-					targets: gameObject,
-					x: gameObject.startX,
-					y: gameObject.startY,
-					ease: 'Sine.easeIn',					
-					duration: 500,					
-				}); 
-			}
-		});
+				else {
+					console.log(gameObject.x+', '+gameObject.y+'/ '+gameObject.targetX+', '+gameObject.targetY);
+					that.tweens.add({
+						targets: gameObject,
+						x: gameObject.startX,
+						y: gameObject.startY,
+						ease: 'Sine.easeIn',					
+						duration: 500,					
+					}); 
+				}
+			});
+		}
 	}
 };
 
@@ -847,7 +1079,7 @@ mainScene.ingredientSelected = function(button) {
 	
 	this.time.delayedCall(250, function() { 
         var speechText = mainScene.changeText();
-    	mainScene.createBubble(615, 300, speechText);
+    	mainScene.createBubble(715, 276, speechText);
     }, [], this);
 	
 };
@@ -856,7 +1088,7 @@ mainScene.zoomToLab = function() {
     var cam = this.cameras.main;
     
     cam.zoomTo(3, 1150);
-    cam.pan(122, 370, 700);
+    cam.pan(215, 350, 700);
     this.time.delayedCall(1150, function() { cam.zoomTo(5, 400); }, [], this);
     
     this.time.delayedCall(1600, function() { 

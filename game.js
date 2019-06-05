@@ -16,3 +16,11 @@ var config = {
  
 // create the game, and pass it the configuration
 var game = new Phaser.Game(config);
+
+function LoLApi (messageName, payloadObj) {
+    parent.postMessage({
+        message: messageName,
+        payload: JSON.stringify(payloadObj)
+    }, 
+'*');
+}

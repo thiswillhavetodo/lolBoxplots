@@ -16,10 +16,15 @@ var zapSfx;
 var labScene = new Phaser.Scene('lab');
 
 labScene.create = function() {
-	console.log(extraIngredient1.name);
+	//console.log(extraIngredient1.name);
 	if (extraIngredient1.name=='none') {
 		extraIngredient1.name = 'Soda';
 	}
+	var progress = {
+	  currentProgress: 6,
+	  maximumProgress: 13			  
+	};
+	LoLApi('progress', progress );
 	finished = false;
 	readyToLeave = false;
     var background = this.add.image(512, 276, 'labBackground');

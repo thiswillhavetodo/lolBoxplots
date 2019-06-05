@@ -164,6 +164,7 @@ mainScene.nextStep = function() {
 		mainScene.createLinePlot(speedArray);
 	}
 	else if (textNumber==28) {
+		LoLApi('completeGame', {});
 		mainScene.reset();
 		mainScene.scene.stop("main");
 		mainScene.scene.start("menu");
@@ -213,7 +214,7 @@ mainScene.createBubble = function(x, y, text) {
         }
     }, [], this);    
     
-    this.time.delayedCall(8000, function() {  //make sure to reset to 8000 after testing
+    this.time.delayedCall(7500, function() {  //make sure to reset to 8000 after testing
         madScientistSprite.anims.play('msStand');
 		if (broken) {
 			bubbleText.text = '';	
@@ -235,7 +236,7 @@ mainScene.createBubble = function(x, y, text) {
 };
 
 mainScene.changeText = function() {
-	var text, difference;
+	var text, difference, progress;
     switch (textNumber) {
         case 0:
             text = jsonText.mainText0;
@@ -262,6 +263,11 @@ mainScene.changeText = function() {
             textNumber++;
             break;
         case 6:
+			progress = {
+			  currentProgress: 1,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
             text = jsonText.mainText6;
             textNumber++;
             break;
@@ -279,6 +285,11 @@ mainScene.changeText = function() {
             }
             break;
         case 8: //add more info on stem & leaf plots
+			progress = {
+			  currentProgress: 2,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
             text = jsonText.mainText8;
             textNumber+=0.5;
             break;
@@ -287,6 +298,11 @@ mainScene.changeText = function() {
             textNumber+=0.5;
             break;
         case 9:
+			progress = {
+			  currentProgress: 3,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
             text = jsonText.mainText9;
             textNumber++;
 			for (var i=0; i<unitsOnlyArray.length; i++) {
@@ -308,6 +324,11 @@ mainScene.changeText = function() {
             textNumber++;
             break;
         case 11:
+			progress = {
+			  currentProgress: 4,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
             text = jsonText.mainText11;
             textNumber+=0.5;
 			for (var i=0; i<unitsOnlyArray.length; i++) {
@@ -335,7 +356,7 @@ mainScene.changeText = function() {
             }
             var modeArray = this.findMode(speedArrayValues);
             var mode1 = modeArray[0];
-            console.log(mode1);
+            //console.log(mode1);
             if (modeArray.length==1) {
                 text = jsonText.mainText12a1+modeArray[0]+jsonText.mainText12a2;
             }
@@ -348,6 +369,11 @@ mainScene.changeText = function() {
             textNumber++;
             break;
         case 13:
+			progress = {
+			  currentProgress: 5,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
             text = jsonText.mainText13;
             textNumber++;
             break;
@@ -361,6 +387,11 @@ mainScene.changeText = function() {
             textNumber++;
 			break;
 		case 16:
+			progress = {
+			  currentProgress: 7,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
 			text = jsonText.mainText16;			
 			namesArray = [];
 			speedArrayOriginal = speedArray;
@@ -382,7 +413,12 @@ mainScene.changeText = function() {
                 });
             }
 			break;
-		case 18:			
+		case 18:	
+			progress = {
+			  currentProgress: 8,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
 			text = jsonText.mainText18;
             textNumber++;
 			break;
@@ -401,13 +437,23 @@ mainScene.changeText = function() {
 			textNumber++;
 			break;		
 		case 21:
+			progress = {
+			  currentProgress: 9,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
 			difference = extraIngredient1.lifetime-10;
-			console.log(difference);
+			//console.log(difference);
 			text = mainScene.showDifference(difference);
-			console.log(text);
+			//console.log(text);
 			textNumber++;
 			break;
 		case 22:
+			progress = {
+			  currentProgress: 10,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
 			for (var i=0; i<unitsOnlyArray.length; i++) {
                 unitsOnlyArray[i].visible = false;   				             
             }
@@ -446,18 +492,33 @@ mainScene.changeText = function() {
 			textNumber++;
 			break;
 		case 25:
+			progress = {
+			  currentProgress: 11,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
 			difference = extraIngredient1.speed-4;
-			console.log(difference);
+			//console.log(difference);
 			text = mainScene.showDifference(difference);
-			console.log(text);
+			//console.log(text);
 			textNumber++;
 			break;
 		case 26: 
+			progress = {
+			  currentProgress: 12,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
 			mainScene.hideData(false);
 			text = mainScene.finalResultText();
 			textNumber++;
 			break;
 		case 27:
+			progress = {
+			  currentProgress: 13,
+			  maximumProgress: 13			  
+			};
+			LoLApi('progress', progress );
 			text = jsonText.mainText27;
 			textNumber++;			
 			break;
@@ -515,7 +576,7 @@ mainScene.showDifference = function(difference) {
 	else if (difference<-1) {
 		response = jsonText.diffResponse5;
 	}
-	console.log(response);
+	//console.log(response);
 	return response;
 };
 
@@ -555,7 +616,7 @@ mainScene.finalResultText = function() {
 		response2 = jsonText.finalResponse8;
 	}
 	response = responseIntro+response1+response2;
-	console.log(response);
+	//console.log(response);
 	return response;
 };
 
@@ -627,7 +688,7 @@ mainScene.createLinePlot = function(array) {
     }
     newArray.splice(0, 1); 
     var sortedArray = newArray.sort(function (a, b) {  return a - b;  });
-    console.log(sortedArray);
+    //console.log(sortedArray);
     var adjuster = 0;
     var sortedDisplay;
     sortedDisplayArray = [];
@@ -638,7 +699,7 @@ mainScene.createLinePlot = function(array) {
             adjuster+=8;
         }
     }
-    console.log(sortedDisplayArray);
+    //console.log(sortedDisplayArray);
     line  = this.add.graphics();
 	line.visible = true;
     line.lineStyle(1, 0x008106, 1);
@@ -726,7 +787,7 @@ mainScene.createLinePlot = function(array) {
 		speechText = this.changeText();
 	}  
     this.time.delayedCall(5000, function() { this.createBubble(715, 276, speechText); }, [], this);
-    console.log(xArray);
+    //console.log(xArray);
 };
 
 mainScene.correctBrokenLinePlot = function() {
@@ -753,25 +814,25 @@ mainScene.correctBrokenLinePlot = function() {
 				gameObject.y = gameObject.targetY-11;							
 				//gameObject.text = 'X';	
 				var finalPosX = that.add.text(gameObject.targetX, gameObject.targetY, 'X', { fontSize: '22px', fill: '#008106' }).setFontFamily('Arial').setOrigin(0.5);
-				console.log(finalPosX);
+				//console.log(finalPosX);
 				xArray.push(finalPosX);
-				console.log(gameObject);
+				//console.log(gameObject);
 				if (!gameObject.matched) {
 					
 					gameObject.visible = false;	
 					brokenAmount--;
 					gameObject.matched = true;
-					console.log(brokenAmount);
+					//console.log(brokenAmount);
 					if (brokenAmount==0&&broken) {
 						broken = false;
 						speechText = that.changeText();
 						that.createBubble(715, 276, speechText);
 					}
 				}
-				console.log(brokenAmount);
+				//console.log(brokenAmount);
 			}
 			else {
-				console.log(gameObject.x+', '+gameObject.y+'/ '+gameObject.targetX+', '+gameObject.targetY);
+				//console.log(gameObject.x+', '+gameObject.y+'/ '+gameObject.targetX+', '+gameObject.targetY);
 				that.tweens.add({
 					targets: gameObject,
 					x: gameObject.startX,
@@ -804,7 +865,7 @@ mainScene.createStemAndLeafPlot = function(array) {
     }
     newArray.splice(0, 1); 
     var sortedArray = newArray.sort(function (a, b) {  return a - b;  });
-    console.log(sortedArray);
+    //console.log(sortedArray);
     var adjuster = 0;
     var sortedDisplay;
     sortedDisplayArray = [];
@@ -815,7 +876,7 @@ mainScene.createStemAndLeafPlot = function(array) {
             adjuster+=8;
         }		
     }
-    console.log(sortedDisplayArray);
+    //console.log(sortedDisplayArray);
     var max = sortedArray[sortedArray.length-1];
     var stemTitle = this.add.text(100, 150, 'Stem', { fontSize: '18px', fill: '#008106' }).setFontFamily('Verdana');
     stemTitle.visible = false;
@@ -931,10 +992,10 @@ mainScene.createStemAndLeafPlot = function(array) {
 			unitsDisplayArray.push(sortedDisplayArray[i].unitsText);
 		}		
     }
-	console.log('Delay: '+delay);
-	console.log(xPosArray);
-	console.log(yPosArray);
-	console.log(unitsDisplayArray);
+	//console.log('Delay: '+delay);
+	//console.log(xPosArray);
+	//console.log(yPosArray);
+	//console.log(unitsDisplayArray);
 	for (var i=0; i<unitsDisplayArray.length; i++) {        
         var unitsOnlyText = this.add.text(xPosArray[i], yPosArray[i], unitsDisplayArray[i], { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana');
 		unitsOnlyText.alpha = 0;
@@ -994,17 +1055,17 @@ mainScene.correctBrokenStemLeaf = function() {
 						brokenAmount--;					
 						gameObject.matched = true;
 						sortedDisplayArray.push(gameObject);
-						console.log(brokenAmount);
+						//console.log(brokenAmount);
 						if (brokenAmount==0&&broken) {
 							broken = false;
 							speechText = that.changeText();
 							that.createBubble(715, 276, speechText);
 						}
 					}
-					console.log(brokenAmount);
+					//console.log(brokenAmount);
 				}
 				else {
-					console.log(gameObject.x+', '+gameObject.y+'/ '+gameObject.targetX+', '+gameObject.targetY);
+					//console.log(gameObject.x+', '+gameObject.y+'/ '+gameObject.targetX+', '+gameObject.targetY);
 					that.tweens.add({
 						targets: gameObject,
 						x: gameObject.startX,
@@ -1075,7 +1136,7 @@ mainScene.ingredientSelected = function(button) {
 		extraIngredient3.name = newIngredient;
 		extraIngredient3.frame = frame;
 	}
-	console.log(extraIngredient1.name);
+	//console.log(extraIngredient1.name);
 	
 	this.time.delayedCall(250, function() { 
         var speechText = mainScene.changeText();

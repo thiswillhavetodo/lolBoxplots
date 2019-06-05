@@ -3,6 +3,9 @@ var mute;
 var jsonText;
 var possibleResponsesArray;
 var possibleIngredientsArray;
+var siteReady = false;
+var loadingText;
+var lang;
 
 var preloadScene = new Phaser.Scene('preload');
 
@@ -10,7 +13,7 @@ preloadScene.preload = function() {
 	
 	var logo = this.add.image(512, 200, 'rubbleLogoLarge');
 	logo.alpha = 0;
-	this.add.text(447, 350, "Loading...", { fontSize: '38px', fill: '#fff' }).setFontFamily('Arial');
+	loadingText = this.add.text(447, 350, "Loading...", { fontSize: '38px', fill: '#fff' }).setFontFamily('Arial');
 	this.tweens.add({
         targets: logo,
         alpha: 1,
@@ -128,29 +131,68 @@ preloadScene.preload = function() {
 };
 
 preloadScene.create = function() {
+	
+	LoLApi('gameIsReady', { 
+		aspectRatio: "16:9",
+		resolution: "1024x576",
+	});
+	//console.log('site ready');
+	loadingText.text = " Ready";
     /*try {
         this.saveLoad();
     }
     catch(err) {
         saveDataAvailable = false;
     }*/
-	var lang = "en";
-	jsonText = this.cache.json.get('text').en;
-	console.log(jsonText);
-    this.animsCreate();
-	possibleIngredientsArray = [[jsonText.possIngredients0, 0], [jsonText.possIngredients1, 1], [jsonText.possIngredients2, 2], [jsonText.possIngredients3, 3], [jsonText.possIngredients4, 4], [jsonText.possIngredients5, 5]];
-	possibleResponsesArray = [jsonText.possResponses0, jsonText.possResponses1, jsonText.possResponses2];
-	var startButton = this.add.sprite(512, 375, 'buttonLarge').setInteractive( { useHandCursor: true  } );
-    startButton.on('pointerdown', this.start); 
-    //this.add.text(462, 350, "Play!", { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 });
-	this.add.text(517, 375, jsonText.pre1, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
-    var startMutedButton = this.add.sprite(512, 475, 'buttonLarge').setInteractive( { useHandCursor: true  } );
-    startMutedButton.on('pointerdown', this.startMuted); 
-    this.add.text(517, 475, jsonText.pre2, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+	window.addEventListener("message", function (msg) {
+		// Message name and JSONified payload
+		//console.log('received');
+		var { messageName, payload } = msg.data; 
+		
+		//console.log(msg.data);
+		switch (msg.data.messageName) {
+			case "start":
+				var payloadObj = JSON.parse(msg.data.payload);
+				//console.log(payloadObj);
+				lang = payloadObj.languageCode;
+				//console.log(lang);
+				siteReady = true;
+				//console.log(siteReady);
+				break;
+		}
+		
+	});
 	
 };
 
-preloadScene.start = function() {
+preloadScene.update = function() {
+	if (siteReady) {
+		siteReady = false;
+		this.loadPage();
+	}
+};
+
+preloadScene.loadPage = function() {
+	//var lang = "en";
+	jsonText = this.cache.json.get('text');
+	//jsonText.lang = lang;
+	//console.log(jsonText);
+	jsonText = jsonText[lang];
+	//console.log(jsonText);
+	this.animsCreate();
+	possibleIngredientsArray = [[jsonText.possIngredients0, 0], [jsonText.possIngredients1, 1], [jsonText.possIngredients2, 2], [jsonText.possIngredients3, 3], [jsonText.possIngredients4, 4], [jsonText.possIngredients5, 5]];
+	possibleResponsesArray = [jsonText.possResponses0, jsonText.possResponses1, jsonText.possResponses2];
+	var startButton = this.add.sprite(512, 375, 'buttonLarge').setInteractive( { useHandCursor: true  } );
+	startButton.on('pointerdown', this.start); 
+	//this.add.text(462, 350, "Play!", { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 });
+	this.add.text(517, 375, jsonText.pre1, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+	var startMutedButton = this.add.sprite(512, 475, 'buttonLarge').setInteractive( { useHandCursor: true  } );
+	startMutedButton.on('pointerdown', this.startMuted); 
+	this.add.text(517, 475, jsonText.pre2, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+	
+};
+
+preloadScene.start = function() {	
     preloadScene.scene.stop("preload");
 	preloadScene.scene.start("menu");
 };

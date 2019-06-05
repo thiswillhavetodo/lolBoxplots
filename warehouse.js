@@ -128,7 +128,7 @@ warehouseScene.crateClicked = function(frame) {
 			smashSfx.play();
 		}
 		cratesCollectedText.text = '= '+ingredientsCollected;
-		console.log(ingredientsCollected);
+		//console.log(ingredientsCollected);
 		if (ingredientsCollected==3) {			
 			tweenDuration = 5200;			
 		}

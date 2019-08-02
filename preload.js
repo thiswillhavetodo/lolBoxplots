@@ -131,7 +131,7 @@ preloadScene.preload = function() {
 };
 
 preloadScene.create = function() {
-	
+	activeScene = "preload";
 	LoLApi('gameIsReady', { 
 		aspectRatio: "16:9",
 		resolution: "1024x576",
@@ -144,11 +144,11 @@ preloadScene.create = function() {
     catch(err) {
         saveDataAvailable = false;
     }*/
+	var that = this;
 	window.addEventListener("message", function (msg) {
 		// Message name and JSONified payload
 		//console.log('received');
-		var { messageName, payload } = msg.data; 
-		
+		var { messageName, payload } = msg.data; 		
 		//console.log(msg.data);
 		switch (msg.data.messageName) {
 			case "start":
@@ -158,6 +158,16 @@ preloadScene.create = function() {
 				//console.log(lang);
 				siteReady = true;
 				//console.log(siteReady);
+				break;
+			case "pause":
+				that.scene.pause(activeScene);
+				that.sound.pauseAll();
+				console.log('paused');
+				break;
+			case "resume":
+				that.scene.resume(activeScene);
+				that.sound.resumeAll();
+				console.log('resumed');
 				break;
 		}
 		

@@ -15,6 +15,7 @@ var conveyorSFX;
 var warehouseScene = new Phaser.Scene('warehouse');
 
 warehouseScene.create = function() {	
+	activeScene = "warehouse";
 	cratesArray = [];
 	ingredientsCollected = 0;
 	correctChoice = extraIngredient1.frame;
@@ -53,9 +54,14 @@ warehouseScene.create = function() {
 		madScientistWarehouse.anims.stop('msWalk');
 		madScientistWarehouse.anims.play('msStand');
 	}, [], this);
-	var speechText = "This is our warehouse. Grab me 15 lots of "+extraIngredient1.name+" by clicking on the crates. Join me in the lab when you're finished.";
-    this.time.delayedCall(2250, function() { this.createBubble(835, 276, speechText); }, [], this);
-	this.time.delayedCall(9500, function() {
+	var speechTextWarehouse = jsonText.warehouseSpeech1+extraIngredient1.name+jsonText.warehouseSpeech2;
+    this.time.delayedCall(2250, function() { 
+		this.createBubble(835, 276, speechTextWarehouse);		
+		if (!mute) {			
+			LoLApi('speakText', { key: 'warehouseSpeech3' });
+		}
+	}, [], this);
+	this.time.delayedCall(10500, function() {
 		madScientistWarehouse.anims.stop('msStand');
 		madScientistWarehouse.anims.play('msWalk');
 		crateIcon.visible = true;
@@ -65,7 +71,7 @@ warehouseScene.create = function() {
         targets: madScientistWarehouse,
         x: 1180,
         ease: 'Sine.easeIn',
-		delay: 9500,		
+		delay: 10500,		
         duration: 2000,					
     });	
 	if (!mute) {
@@ -213,7 +219,7 @@ warehouseScene.createBubble = function(x, y, text) {
         }
     }, [], this);
     
-    this.time.delayedCall(7000, function() {
+    this.time.delayedCall(7500, function() {
         madScientistWarehouse.anims.play('msStand');
 		bubbleText.text = '';
         bubbleSprite.anims.play('bubbleClose');

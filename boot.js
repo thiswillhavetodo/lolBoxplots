@@ -1,4 +1,6 @@
 /*global Phaser*/
+
+var activeScene;
 var bootScene = new Phaser.Scene('boot');
 
 bootScene.preload = function() {

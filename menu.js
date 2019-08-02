@@ -1,6 +1,7 @@
 var menuScene = new Phaser.Scene('menu');
 
 menuScene.create = function() {
+	activeScene = "menu";
 	var background = this.add.image(512, 288, 'menuBackground');
     //background.setScale(2);
 	var startButton = this.add.sprite(512, 375, 'buttonLarge').setInteractive( { useHandCursor: true  } );
@@ -9,7 +10,7 @@ menuScene.create = function() {
 	if (!mute) {
         var growlSFX = this.sound.add('growl');
 		growlSFX.play();	
-		//LoLApi('speakText', {jsonText:"pre1"});
+		LoLApi('speakText', { key: 'title' });
     }
 	
 };

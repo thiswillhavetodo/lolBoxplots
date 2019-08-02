@@ -16,15 +16,15 @@ var zapSfx;
 var labScene = new Phaser.Scene('lab');
 
 labScene.create = function() {
-	//console.log(extraIngredient1.name);
-	if (extraIngredient1.name=='none') {
-		extraIngredient1.name = 'Soda';
+	activeScene = "lab";
+	//console.log(extraIngredient1.name);	
+	if (possibleIngredientsArray.length==5) {
+		var progress = {
+		  currentProgress: 6,
+		  maximumProgress: 13			  
+		};
+		LoLApi('progress', progress );
 	}
-	var progress = {
-	  currentProgress: 6,
-	  maximumProgress: 13			  
-	};
-	LoLApi('progress', progress );
 	finished = false;
 	readyToLeave = false;
     var background = this.add.image(512, 276, 'labBackground');
@@ -43,8 +43,11 @@ labScene.create = function() {
     victim = this.add.sprite(500, 436, 'victims');
     victim.setScale(2);
     victim.setFrame(0);
-    var speechText = jsonText.labSpeech1;
-    this.time.delayedCall(750, function() { this.createBubble(785, 276, speechText); }, [], this);
+    var speechTextLab = jsonText.labSpeech1;
+    this.time.delayedCall(750, function() { this.createBubble(785, 276, speechTextLab); }, [], this);
+	if (!mute) {				
+		LoLApi('speakText', { key: 'labSpeech1' });
+	}
 	this.add.text(445, 206, 'Speed (mph) :', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
 	speedText = this.add.text(590, 206, '0', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
 	this.add.text(445, 271, 'Lifetime (sec) :', { fontSize: '15px', fill: '#008106' }).setFontFamily('Verdana').setFontStyle('bold');
@@ -75,7 +78,9 @@ labScene.create = function() {
 
 labScene.setResults = function() {
 	var ingredient, speed, lifetime, currentNumber;
-	if (extraIngredient3.name!='none') {
+	ingredient = extraIngredient1.name;
+	currentNumber = 1;
+	/*if (extraIngredient3.name!='none') {
 		ingredient = extraIngredient3.name;
 		currentNumber = 3;
 	}
@@ -86,7 +91,7 @@ labScene.setResults = function() {
 	else if (extraIngredient1.name!='none') {
 		ingredient = extraIngredient1.name;
 		currentNumber = 1;
-	}
+	}*/
 	switch (ingredient) {
 		case jsonText.possIngredients0:
 			speed = 7;
@@ -184,9 +189,14 @@ labScene.testAnimation = function() {
 			timeDisplayed++; 
 			lifeText.text = timeDisplayed;
 			if (timeDisplayed==resultsArray[2]) {
-				var speechText = jsonText.labSpeech2+resultsArray[2]+jsonText.labSpeech3+resultsArray[1]+jsonText.labSpeech4;
+				var speechTextLab = jsonText.labSpeech2+resultsArray[2]+jsonText.labSpeech3+resultsArray[1]+jsonText.labSpeech4;
 				finished = true;
-				this.time.delayedCall(2000, function() { this.createBubble(785, 276, speechText); }, [], this);
+				this.time.delayedCall(2000, function() { 
+					this.createBubble(785, 276, speechTextLab); 
+					if (!mute) {						
+						LoLApi('speakText', { key: 'labSpeech6' });
+					}
+				}, [], this);
 			}
 		}, [], this);		
 		
@@ -240,8 +250,11 @@ labScene.nextStep = function() {
 		}
 		else if (!readyToLeave) {
 			readyToLeave = true;
-			var speechText = jsonText.labSpeech5;				
-			this.createBubble(785, 276, speechText);			
+			var speechTextLab = jsonText.labSpeech5;				
+			this.createBubble(785, 276, speechTextLab);
+			if (!mute) {				
+				LoLApi('speakText', { key: 'labSpeech5' });
+			}
 		}
 		else {
 			this.time.delayedCall(500, function() { 
@@ -249,6 +262,7 @@ labScene.nextStep = function() {
 					treadmillSfx.stop();
 				}
 				labScene.scene.stop("lab");
+				activeScene = "main";
 				labScene.scene.start("main"); 
 			}, [], this);
 		}

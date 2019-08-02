@@ -1,7 +1,7 @@
 /*global Phaser*/
 var madScientistSprite;
 var bubbleSprite;
-var textNumber = 0;
+var textNumber = 0; //*********************  reset to 0  *************************
 var namesArray = [];
 var speedArray = [];
 var lifeArray = [];
@@ -38,9 +38,14 @@ var xArray;
 var graphAxisTextArray;
 var nextButton;
 var nextButtonLabel;
+var againButton;
+var againButtonLabel;
 var bubbleSprite;
 var bubbleText;
+var bubbleSpriteTwo;
+var bubbleTextTwo;
 var bubbleVisible = false;
+var bubbleTwoVisible = false;
 var lineButton;
 var lineButtonLabel;
 var stemButton;
@@ -54,15 +59,21 @@ var brokenAmount;
 var brokenType;
 var unitsOnlyArray;
 var winSfx;
+var highestRowButtonArray = [];
+var highestColumnButtonArray = [];
+var activeBrokenData = 'none';
+var brokenLineDataArray = [];
+var brokenStemDataArray = [];
 //var speechText;
 
 var mainScene = new Phaser.Scene('main');
 
 mainScene.create = function() {	
+	activeScene = "main";
     if (textNumber==0) {
         this.shuffle(possibleIngredientsArray);
 		this.shuffle(possibleResponsesArray);
-    }
+    }		
 	broken = false;
 	ingredientsButtonArray = [];
 	brokenStemLeafArray = [];
@@ -74,7 +85,7 @@ mainScene.create = function() {
     madScientistSprite.setScale(2);
     madScientistSprite.anims.play('msStand');
     var speechText = this.changeText();
-    this.createBubble(715, 276, speechText);
+    this.createBubble(715, 276, speechText, true);
     var computer = this.add.image(200, 452, 'computer');
     computer.setScale(0.65);
     var table = this.add.image(200, 536, 'table');
@@ -85,20 +96,23 @@ mainScene.create = function() {
 	dataTable.visible = false;
 	nextButton = this.add.sprite(512, 530, 'buttonLarge').setInteractive( { useHandCursor: true  } );    
 	var that = this;
-	nextButton.on('pointerdown', function() {
-        bubbleText.text = '';	
+	nextButton.on('pointerdown', function() {      
 		if (bubbleVisible) {
+			bubbleText.text = '';	
 			bubbleSprite.anims.play('bubbleClose');
+		}
+		if (bubbleTwoVisible) {
+			bubbleTextTwo.text = '';	
+			bubbleSpriteTwo.anims.play('bubbleClose');
 		}
 		that.time.delayedCall(500, function() {
             mainScene.nextStep();
         }, [], this);		
     }); 	
 	nextButton.visible = false;
-    nextButtonLabel = this.add.text(517, 530, jsonText.mainButton1, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+    nextButtonLabel = this.add.text(517, 530, jsonText.mainButton1, { fontSize: '34px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
 	nextButtonLabel.visible = false;
-	if (!mute) {		
-		winSfx = this.sound.add('win');
+	if (!mute) {	
 		speechBubbleSfx = this.sound.add('pop');			
 	}	
 };
@@ -116,17 +130,25 @@ mainScene.nextStep = function() {
 	else if (textNumber==8) {		
 		mainScene.createStemAndLeafPlot(lifeArray);
 	}
+	else if (textNumber==8.5) {
+		speechText = mainScene.changeText();
+		mainScene.createBubble(715, 276, speechText, false);
+	}
 	else if (textNumber==10) {
 		mainScene.createStemAndLeafPlot(speedArray);
 	}
 	else if (textNumber==12) {		
 		mainScene.createLinePlot(speedArray);
-	}
+	}	
 	else if (textNumber==14) {                
 		mainScene.hideData();
 		mainScene.addIngredients();
 		speechText = mainScene.changeText();
-		mainScene.createBubble(715, 276, speechText);
+		mainScene.createBubble(715, 276, speechText, true);
+	}
+	else if (textNumber==15) {
+		speechText = mainScene.changeText();
+		mainScene.createBubble(715, 276, speechText, false);
 	}
 	else if (textNumber==16) {
 		mainScene.zoomToLab();
@@ -163,15 +185,18 @@ mainScene.nextStep = function() {
 		broken = true;
 		mainScene.createLinePlot(speedArray);
 	}
-	else if (textNumber==28) {
-		LoLApi('completeGame', {});
+	else if (textNumber==27) {
+		speechText = mainScene.changeText();
+		mainScene.createBubble(715, 276, speechText, false);
+	}
+	else if (textNumber==28) {		
 		mainScene.reset();
 		mainScene.scene.stop("main");
 		mainScene.scene.start("menu");
 	}
 	else {
 		speechText = mainScene.changeText();
-		mainScene.createBubble(715, 276, speechText);
+		mainScene.createBubble(715, 276, speechText, true);
 	}
 	/*this.time.delayedCall(500, function() {
 		
@@ -187,11 +212,21 @@ mainScene.reset = function() {
 	sortedDisplayArray = [];
 };
 
-mainScene.createBubble = function(x, y, text) {
-	bubbleVisible = true;
+mainScene.createBubble = function(x, y, text, triggerNext) {	
+	if (bubbleVisible) {
+		bubbleText.text = '';	
+		bubbleSprite.destroy();
+		bubbleVisible = false;
+	}	
+	if (bubbleTwoVisible) {
+		bubbleTextTwo.text = '';	
+		bubbleSpriteTwo.destroy();
+		bubbleTwoVisible = false;
+	}	
     bubbleSprite = this.add.sprite(x, y, 'speechBubble');
     bubbleSprite.setScale(2);
     bubbleSprite.setTint(0xfeffb1);
+	bubbleVisible = true;
     bubbleSprite.on('animationcomplete', function (anim, frame) {
       this.emit('animationcomplete_' + anim.key, anim, frame);
     }, bubbleSprite);
@@ -214,15 +249,62 @@ mainScene.createBubble = function(x, y, text) {
         }
     }, [], this);    
     
-    this.time.delayedCall(7500, function() {  //make sure to reset to 8000 after testing
+    this.time.delayedCall(7250, function() {  //make sure to reset to 8000 after testing
         madScientistSprite.anims.play('msStand');
-		if (broken) {
+		if (broken||!triggerNext) {
 			bubbleText.text = '';	
 			if (bubbleVisible) {
 				bubbleSprite.anims.play('bubbleClose');
 			}
 		}
-		else if (textNumber!=15) {
+		else if (triggerNext) {
+			nextButton.visible = true;			
+			nextButtonLabel.visible = true;
+		}
+    }, [], this);
+};
+
+mainScene.createBubbleTwo = function(x, y, text, triggerNext) {	
+	if (bubbleTwoVisible) {
+		bubbleTextTwo.text = '';	
+		bubbleSpriteTwo.destroy();
+		bubbleTwoVisible = false;
+	}	
+    bubbleSpriteTwo = this.add.sprite(x, y, 'speechBubble');
+    bubbleSpriteTwo.setScale(2);
+    bubbleSpriteTwo.setTint(0xfeffb1);
+	bubbleTwoVisible = true;
+    bubbleSpriteTwo.on('animationcomplete', function (anim, frame) {
+      this.emit('animationcomplete_' + anim.key, anim, frame);
+    }, bubbleSpriteTwo);
+    bubbleSpriteTwo.anims.play('bubbleOpen');
+    bubbleSpriteTwo.on('animationcomplete_bubbleOpen', function () {
+        bubbleSpriteTwo.setFrame(3);
+    });
+    bubbleSpriteTwo.on('animationcomplete_bubbleClose', function () {
+        bubbleSpriteTwo.destroy();
+		bubbleTwoVisible = false;
+    });
+    bubbleTextTwo = this.add.text(x, y-20, text, { fontSize: '26px', fill: '#000', wordWrap: { width: 320, useAdvancedWrap: true } }).setFontFamily('Verdana').setOrigin(0.5);
+    bubbleTextTwo.visible = false;
+    
+    this.time.delayedCall(250, function() {
+        bubbleTextTwo.visible = true;
+        madScientistSprite.anims.play('msTalk');
+        if (!mute) {
+            speechBubbleSfx.play();
+        }
+    }, [], this);    
+    
+    this.time.delayedCall(6500, function() {  //make sure to reset to 8000 after testing
+        madScientistSprite.anims.play('msStand');
+		if (broken||!triggerNext) {
+			bubbleTextTwo.text = '';	
+			if (bubbleTwoVisible) {
+				bubbleSpriteTwo.anims.play('bubbleClose');
+			}
+		}
+		else if (triggerNext) {
 			nextButton.visible = true;
 			if (textNumber==28) { 
 				if (!mute) {
@@ -240,26 +322,44 @@ mainScene.changeText = function() {
     switch (textNumber) {
         case 0:
             text = jsonText.mainText0;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText0' });
+			}
             textNumber++;
             break;
         case 1:
             text = jsonText.mainText1;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText1' });
+			}
             textNumber++;
             break;
         case 2:
             text = jsonText.mainText2;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText2' });
+			}
             textNumber++;
             break;
         case 3:
             text = jsonText.mainText3;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText3' });
+			}
             textNumber++;
             break;
         case 4:
             text = jsonText.mainText4;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText4' });
+			}
             textNumber++;
             break;
         case 5:
             text = jsonText.mainText5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText5' });
+			}
             textNumber++;
             break;
         case 6:
@@ -269,10 +369,16 @@ mainScene.changeText = function() {
 			};
 			LoLApi('progress', progress );
             text = jsonText.mainText6;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText6' });
+			}
             textNumber++;
             break;
         case 7:
             text = jsonText.mainText7;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText7' });
+			}
             textNumber++;
             for (var i=0; i<speedArray.length; i++) {
                 speedArray[i].visible = false;
@@ -291,10 +397,16 @@ mainScene.changeText = function() {
 			};
 			LoLApi('progress', progress );
             text = jsonText.mainText8;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText8' });
+			}
             textNumber+=0.5;
             break;
 		case 8.5:
             text = jsonText.mainText8_5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText8_5' });
+			}
             textNumber+=0.5;
             break;
         case 9:
@@ -304,6 +416,9 @@ mainScene.changeText = function() {
 			};
 			LoLApi('progress', progress );
             text = jsonText.mainText9;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText9' });
+			}
             textNumber++;
 			for (var i=0; i<unitsOnlyArray.length; i++) {
                 unitsOnlyArray[i].visible = false;   				             
@@ -321,6 +436,9 @@ mainScene.changeText = function() {
             break;
         case 10:
             text = jsonText.mainText10;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText10' });
+			}
             textNumber++;
             break;
         case 11:
@@ -330,6 +448,9 @@ mainScene.changeText = function() {
 			};
 			LoLApi('progress', progress );
             text = jsonText.mainText11;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText11' });
+			}
             textNumber+=0.5;
 			for (var i=0; i<unitsOnlyArray.length; i++) {
                 unitsOnlyArray[i].visible = false;   				             
@@ -347,6 +468,9 @@ mainScene.changeText = function() {
             break;
 		case 11.5:
             text = jsonText.mainText11_5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText11_5' });
+			}
             textNumber+=0.5;
             break;
         case 12:
@@ -354,45 +478,63 @@ mainScene.changeText = function() {
             for (var i = 0; i<speedArray.length; i++) {
                 speedArrayValues.push(parseFloat(speedArray[i].text));
             }
-            var modeArray = this.findMode(speedArrayValues);
-            var mode1 = modeArray[0];
-            //console.log(mode1);
-            if (modeArray.length==1) {
-                text = jsonText.mainText12a1+modeArray[0]+jsonText.mainText12a2;
-            }
-            else if (modeArray.length==2) {
-                text = jsonText.mainText12b1+modeArray[0]+jsonText.mainText12b2+modeArray[1]+jsonText.mainText12b3;
-            }
-            else if (modeArray.length==3) {
-                text = jsonText.mainText12b1+modeArray[2]+", "+modeArray[0]+jsonText.mainText12b2+modeArray[1]+jsonText.mainText12b3;
-            }
+            text = jsonText.mainText12;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText12' });
+			}
             textNumber++;
             break;
         case 13:
-			progress = {
-			  currentProgress: 5,
-			  maximumProgress: 13			  
-			};
-			LoLApi('progress', progress );
+			if (possibleIngredientsArray.length==6) {
+				progress = {
+				  currentProgress: 5,
+				  maximumProgress: 13			  
+				};
+				LoLApi('progress', progress );
+			}
             text = jsonText.mainText13;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText13' });
+			}
             textNumber++;
             break;
         case 14:
             text = jsonText.mainText14;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText14' });
+			}
             textNumber++;
             break;
 		case 15:
 			text = possibleResponsesArray[0];
+			var response;
+			if (possibleResponsesArray[0]==jsonText.possResponses0) {
+				response = 'possResponses0';
+			}
+			else if (possibleResponsesArray[0]==jsonText.possResponses1) {
+				response = 'possResponses1';
+			}
+			else if (possibleResponsesArray[0]==jsonText.possResponses2) {
+				response = 'possResponses2';
+			}
+			if (!mute) {				
+				LoLApi('speakText', { key: response });
+			}
 			possibleResponsesArray.splice(0, 1);
             textNumber++;
 			break;
 		case 16:
-			progress = {
-			  currentProgress: 7,
-			  maximumProgress: 13			  
-			};
-			LoLApi('progress', progress );
-			text = jsonText.mainText16;			
+			if (possibleIngredientsArray.length==5) {
+				progress = {
+				  currentProgress: 7,
+				  maximumProgress: 13			  
+				};
+				LoLApi('progress', progress );
+			}			
+			text = jsonText.mainText16;	
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText16' });
+			}
 			namesArray = [];
 			speedArrayOriginal = speedArray;
 			speedArray = [];
@@ -402,6 +544,9 @@ mainScene.changeText = function() {
 			break;
 		case 17:
 			text = jsonText.mainText17;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText17' });
+			}
             textNumber++;
 			for (var i=0; i<speedArray.length; i++) {
                 speedArray[i].visible = false;
@@ -414,46 +559,65 @@ mainScene.changeText = function() {
             }
 			break;
 		case 18:	
-			progress = {
-			  currentProgress: 8,
-			  maximumProgress: 13			  
-			};
-			LoLApi('progress', progress );
+			if (possibleIngredientsArray.length==5) {
+				progress = {
+				  currentProgress: 8,
+				  maximumProgress: 13			  
+				};
+				LoLApi('progress', progress );
+			}			
 			text = jsonText.mainText18;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText18' });
+			}
             textNumber++;
 			break;
 		case 19:
 			if (correctGraphType) {
 				text = jsonText.mainText19a;
 				textNumber+=2;
+				if (!mute) {				
+					LoLApi('speakText', { key: 'mainText19a' });
+				}
 			}
 			else {				
 				text = jsonText.mainText19b;
 				textNumber++;
+				if (!mute) {				
+					LoLApi('speakText', { key: 'mainText19b' });
+				}
 			}            
 			break;
 		case 20:
 			text = jsonText.mainText20;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText20' });
+			}
 			textNumber++;
 			break;		
 		case 21:
-			progress = {
-			  currentProgress: 9,
-			  maximumProgress: 13			  
-			};
-			LoLApi('progress', progress );
+			if (possibleIngredientsArray.length==5) {
+				progress = {
+				  currentProgress: 9,
+				  maximumProgress: 13				
+				};
+				LoLApi('progress', progress );
+			}			
 			difference = extraIngredient1.lifetime-10;
 			//console.log(difference);
 			text = mainScene.showDifference(difference);
+			
 			//console.log(text);
 			textNumber++;
 			break;
 		case 22:
-			progress = {
-			  currentProgress: 10,
-			  maximumProgress: 13			  
-			};
-			LoLApi('progress', progress );
+			if (possibleIngredientsArray.length==5) {
+				progress = {
+				  currentProgress: 10,
+				  maximumProgress: 13			  
+				};
+				LoLApi('progress', progress );
+			}			
 			for (var i=0; i<unitsOnlyArray.length; i++) {
                 unitsOnlyArray[i].visible = false;   				             
             }
@@ -473,57 +637,115 @@ mainScene.changeText = function() {
                 namesArray[i].visible = true; 
 				speedArray[i].visible = true; 
             }
+			for (var i=0; i<brokenStemDataArray.length; i++) {
+				brokenStemDataArray[i].visible = false;
+			}
 			text = jsonText.mainText22;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText22' });
+			}
 			textNumber++;
 			break;
 		case 23:
 			if (correctGraphType) {
 				text = jsonText.mainText23a;
 				textNumber+=2;
+				if (!mute) {				
+					LoLApi('speakText', { key: 'mainText23a' });
+				}
 			}
 			else {
 				mainScene.hideData(true);				
 				text = jsonText.mainText23b;
 				textNumber++;
+				if (!mute) {				
+					LoLApi('speakText', { key: 'mainText23b' });
+				}
 			}            
 			break;
 		case 24:
 			text = jsonText.mainText24;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'mainText24' });
+			}
 			textNumber++;
 			break;
 		case 25:
-			progress = {
-			  currentProgress: 11,
-			  maximumProgress: 13			  
-			};
-			LoLApi('progress', progress );
+			if (possibleIngredientsArray.length==5) {
+				progress = {
+				  currentProgress: 11,
+				  maximumProgress: 13			  
+				};			
+				LoLApi('progress', progress );
+			}
 			difference = extraIngredient1.speed-4;
 			//console.log(difference);
 			text = mainScene.showDifference(difference);
+			
 			//console.log(text);
 			textNumber++;
 			break;
 		case 26: 
-			progress = {
-			  currentProgress: 12,
-			  maximumProgress: 13			  
-			};
-			LoLApi('progress', progress );
+			if (possibleIngredientsArray.length==5) {
+				progress = {
+				  currentProgress: 12,
+				  maximumProgress: 13			  
+				};
+				LoLApi('progress', progress );
+			}
 			mainScene.hideData(false);
 			text = mainScene.finalResultText();
 			textNumber++;
 			break;
 		case 27:
-			progress = {
-			  currentProgress: 13,
-			  maximumProgress: 13			  
-			};
-			LoLApi('progress', progress );
-			text = jsonText.mainText27;
+			if (possibleIngredientsArray.length==5) {
+				progress = {
+				  currentProgress: 13,
+				  maximumProgress: 13			  
+				};
+				LoLApi('progress', progress );					
+			}
+			LoLApi('complete', {});
+			//LoLApi('completeGame', {});
 			textNumber++;			
-			break;
+			if (possibleIngredientsArray.length>3) {
+				text = jsonText.mainText27b;
+				if (!mute) {				
+					LoLApi('speakText', { key: 'mainText27b' });
+				}
+				againButton = this.add.sprite(512, 430, 'buttonLarge').setInteractive( { useHandCursor: true  } );    
+				var that = this;
+				againButton.on('pointerdown', function() {
+					bubbleText.text = '';	
+					if (bubbleVisible) {
+						bubbleSprite.anims.play('bubbleClose');
+					}
+					that.time.delayedCall(500, function() {
+						mainScene.testAgain();
+					}, [], this);		
+				}); 				
+				againButtonLabel = this.add.text(517, 430, jsonText.mainButton2, { fontSize: '30px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);			
+			}
+			else {
+				text = jsonText.mainText27a;
+				if (!mute) {				
+					LoLApi('speakText', { key: 'mainText27a' });
+				}
+			}	
+			nextButton.visible = true;			
+			nextButtonLabel.visible = true;
+			nextButtonLabel.text = jsonText.mainButton3;			
+			break;		
     }
     return text;
+};
+
+mainScene.testAgain = function() {
+	againButton.visible = false;
+	againButtonLabel.visible = false;
+	textNumber = 14;
+	nextButtonLabel.text = jsonText.mainButton1;
+	mainScene.nextStep();
 };
 
 mainScene.showData = function(avSpeed, avLife) {
@@ -536,6 +758,16 @@ mainScene.showData = function(avSpeed, avLife) {
     lifeArray.push(lifeTitle);
     var speedValuesArray = [avSpeed, avSpeed+1, avSpeed+2, avSpeed+3, avSpeed, avSpeed-1, avSpeed-2, avSpeed-3, avSpeed, avSpeed+1, avSpeed+2, avSpeed, avSpeed-1, avSpeed-2, avSpeed, avSpeed+1, avSpeed-1];
     this.shuffle(speedValuesArray);
+	//console.log(speedValuesArray);
+	speedValuesArray = speedValuesArray.slice(0, 15);
+	//console.log(speedValuesArray);
+	var speedModeArray = this.findMode(speedValuesArray);
+	while (speedModeArray.length>1) {
+		speedValuesArray.unshift(avSpeed);
+		speedValuesArray = speedValuesArray.slice(0, 15);
+		speedModeArray = this.findMode(speedValuesArray);
+	}
+	//console.log(speedValuesArray);
     var lifeValuesArray = [avLife, avLife+1, avLife+2, avLife+3, avLife+4, avLife-1, avLife-2, avLife-3, (2*avLife), (2*avLife)+1, (2*avLife)+2, (2*avLife)+3, (2*avLife)-1, (2*avLife)-2, (2*avLife)-3, (3*avLife), (3*avLife)+1, (3*avLife)-1, (3*avLife)-2, (3*avLife)-3];
     this.shuffle(lifeValuesArray);
     for (var i=1; i<=15; i++) {
@@ -563,28 +795,204 @@ mainScene.showDifference = function(difference) {
 	var response;
 	if (difference>1) {
 		response = jsonText.diffResponse1;
+		if (!mute) {				
+			LoLApi('speakText', { key: 'diffResponse1' });
+		}
 	}
 	else if (difference==1) {
 		response = jsonText.diffResponse2;
+		if (!mute) {				
+			LoLApi('speakText', { key: 'diffResponse2' });
+		}
 	}
 	else if (difference==0) {
 		response = jsonText.diffResponse3;
+		if (!mute) {				
+			LoLApi('speakText', { key: 'diffResponse3' });
+		}
 	}
 	else if (difference==-1) {
 		response = jsonText.diffResponse4;
+		if (!mute) {				
+			LoLApi('speakText', { key: 'diffResponse4' });
+		}
 	}
 	else if (difference<-1) {
 		response = jsonText.diffResponse5;
+		if (!mute) {				
+			LoLApi('speakText', { key: 'diffResponse5' });
+		}
 	}
 	//console.log(response);
 	return response;
 };
 
 mainScene.finalResultText = function() { 
-	var response, response1, response2;
+	var response;
 	var diff1 = extraIngredient1.lifetime-10;
 	var diff2 = extraIngredient1.speed-4;
-	var responseIntro = jsonText.finalResponse1+extraIngredient1.name+jsonText.finalResponse2;
+	if (diff1>1) {
+		if (diff2>1) {
+			response = jsonText.finalResponse1;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse1' });
+			}
+		}
+		else if (diff2==1) {
+			response = jsonText.finalResponse2;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse2' });
+			}
+		}
+		else if (diff2==0) {
+			response = jsonText.finalResponse2;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse2' });
+			}
+		}
+		else if (diff2==-1) {
+			response = jsonText.finalResponse2;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse2' });
+			}
+		}
+		else if (diff2<-1) {
+			response = jsonText.finalResponse3;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse3' });
+			}
+		}
+	}
+	else if (diff1==1) {
+		if (diff2>1) {
+			response = jsonText.finalResponse4;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse4' });
+			}
+		}
+		else if (diff2==1) {
+			response = jsonText.finalResponse5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse5' });
+			}
+		}
+		else if (diff2==0) {
+			response = jsonText.finalResponse5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse5' });
+			}
+		}
+		else if (diff2==-1) {
+			response = jsonText.finalResponse5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse5' });
+			}
+		}
+		else if (diff2<-1) {
+			response = jsonText.finalResponse6;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse6' });
+			}
+		}
+	}
+	else if (diff1==0) {
+		if (diff2>1) {
+			response = jsonText.finalResponse4;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse4' });
+			}
+		}
+		else if (diff2==1) {
+			response = jsonText.finalResponse5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse5' });
+			}
+		}
+		else if (diff2==0) {
+			response = jsonText.finalResponse5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse5' });
+			}
+		}
+		else if (diff2==-1) {
+			response = jsonText.finalResponse5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse5' });
+			}
+		}
+		else if (diff2<-1) {
+			response = jsonText.finalResponse6;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse6' });
+			}
+		}
+	}
+	else if (diff1==-1) {
+		if (diff2>1) {
+			response = jsonText.finalResponse4;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse4' });
+			}
+		}
+		else if (diff2==1) {
+			response = jsonText.finalResponse5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse5' });
+			}
+		}
+		else if (diff2==0) {
+			response = jsonText.finalResponse5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse5' });
+			}
+		}
+		else if (diff2==-1) {
+			response = jsonText.finalResponse5;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse5' });
+			}
+		}
+		else if (diff2<-1) {
+			response = jsonText.finalResponse6;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse6' });
+			}
+		}
+	}
+	else if (diff1<-1) {
+		if (diff2>1) {
+			response = jsonText.finalResponse7;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse7' });
+			}
+		}
+		else if (diff2==1) {
+			response = jsonText.finalResponse8;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse8' });
+			}
+		}
+		else if (diff2==0) {
+			response = jsonText.finalResponse8;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse8' });
+			}
+		}
+		else if (diff2==-1) {
+			response = jsonText.finalResponse8;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse8' });
+			}
+		}
+		else if (diff2<-1) {
+			response = jsonText.finalResponse9;
+			if (!mute) {				
+				LoLApi('speakText', { key: 'finalResponse9' });
+			}
+		}
+	}
+	
+	/*var responseIntro = jsonText.finalResponse1+extraIngredient1.name+jsonText.finalResponse2;	
 	if (diff1>1) {
 		response1 = jsonText.finalResponse3;
 	}
@@ -615,7 +1023,7 @@ mainScene.finalResultText = function() {
 	else if (diff2<-1) {
 		response2 = jsonText.finalResponse8;
 	}
-	response = responseIntro+response1+response2;
+	response = responseIntro+response1+response2;*/
 	//console.log(response);
 	return response;
 };
@@ -732,7 +1140,7 @@ mainScene.createLinePlot = function(array) {
         else {
             yPos = 425;
         }        
-		if (broken&&i%3==0) {
+		if (broken&&i%2==0) {
 			sortedDisplayArray[i].visible = false;
 			var brokenDataInfo = {
 				x: sortedDisplayArray[i].x,
@@ -749,7 +1157,7 @@ mainScene.createLinePlot = function(array) {
 			xPosArray.push(xPos);
         	yPosArray.push(yPos);
 		}
-        delay+=150;
+        delay+=100;
         this.tweens.add({
             targets: sortedDisplayArray[i],
             x: xPos,
@@ -765,7 +1173,10 @@ mainScene.createLinePlot = function(array) {
             delay: delay+450,
             duration: 50,
         }); 
-    }
+    }	
+	if (!broken&&textNumber==12) {		
+		mainScene.checkHighestColumn(xPosArray, sortedArray[0]);		
+	}
     for (var i=0; i<xPosArray.length; i++) {
         var xText = this.add.text(xPosArray[i], yPosArray[i], 'X', { fontSize: '22px', fill: '#008106' }).setFontFamily('Arial').setOrigin(0.5);
         xText.alpha = 0;
@@ -773,7 +1184,7 @@ mainScene.createLinePlot = function(array) {
 			targets: xText,
 			alpha: 1,
 			ease: 'Sine.easeIn',
-			delay: 1675+(i*150),
+			delay: 1675+(i*100),
 			duration: 25,
 		}); 
 		xArray.push(xText);
@@ -786,53 +1197,154 @@ mainScene.createLinePlot = function(array) {
 	else {
 		speechText = this.changeText();
 	}  
-    this.time.delayedCall(5000, function() { this.createBubble(715, 276, speechText); }, [], this);
+    this.time.delayedCall(1500, function() { 
+		if (textNumber==12||textNumber==13) {
+			this.createBubble(715, 276, speechText, false);
+		}
+		else {
+			this.createBubble(715, 276, speechText, true);
+		}
+		if (!mute) {	
+			if (broken) {
+				LoLApi('speakText', { key: 'lineBrokenResponse' });
+			}
+			else {
+				LoLApi('speakText', { key: speechText });
+			}			
+		}
+	}, [], this);
     //console.log(xArray);
 };
 
+mainScene.createBrokenDataLine = function(i) {
+	var brokenData = this.add.text(brokenLinePlotArray[i].x, brokenLinePlotArray[i].y, brokenLinePlotArray[i].value, { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana').setInteractive( { useHandCursor: true } );
+	brokenData.targetX = brokenLinePlotArray[i].targetX;
+	brokenData.targetY = brokenLinePlotArray[i].targetY;
+	brokenData.startX = brokenLinePlotArray[i].startX;
+	brokenData.startY = brokenLinePlotArray[i].startY;
+	brokenData.unitText = brokenLinePlotArray[i].unitValue;
+	brokenData.matched = false;
+	var that = this;
+	brokenData.on('pointerdown', function() {      
+		for (var i=0; i<brokenLineDataArray.length; i++) {
+			brokenLineDataArray[i].setScale(1);
+		}
+		brokenData.setScale(1.15);	
+		activeBrokenData = brokenData;		
+		that.input.on('pointerdown', function (pointer) {			
+			//console.log(pointer.x);
+			//console.log(pointer.y);
+			if (brokenAmount>0&&activeBrokenData!='none') {
+				if ((pointer.x>=brokenData.targetX-25)&&(pointer.x<=brokenData.targetX+45)&&(pointer.y>=120)&&(pointer.y<=510)) {			
+					that.tweens.add({
+						targets: brokenData,
+						x: (brokenData.targetX)-11,
+						y: (brokenData.targetY)-11,
+						ease: 'Sine.easeIn',					
+						duration: 500,					
+					});
+					var finalPosX = that.add.text(brokenData.targetX, brokenData.targetY, 'X', { fontSize: '22px', fill: '#008106' }).setFontFamily('Arial').setOrigin(0.5);
+					finalPosX.visible = false;
+					xArray.push(finalPosX);	
+					that.time.delayedCall(500, function() { 
+						brokenData.setScale(1);	
+						brokenData.visible = false;	
+						finalPosX.visible = true;
+					}, [], this);								
+					if (!brokenData.matched) {						
+						brokenAmount--;
+						brokenData.matched = true;
+						activeBrokenData = 'none';
+						if (brokenAmount==0&&broken) {
+							broken = false;
+							speechText = that.changeText();
+							that.createBubble(715, 276, speechText, true);
+						}
+					}	
+				}
+				else {	
+					mainScene.wrongSL();	
+				}
+			}
+		}, this);			
+	}); 
+	brokenLineDataArray.push(brokenData);
+};
+
 mainScene.correctBrokenLinePlot = function() {
+	brokenLineDataArray = [];
 	brokenType = 'lp';
-	brokenAmount = 5;
+	brokenAmount = 8;
 	for (var i=0; i<brokenLinePlotArray.length; i++) {
-		var brokenData = this.add.text(brokenLinePlotArray[i].x, brokenLinePlotArray[i].y, brokenLinePlotArray[i].value, { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana').setInteractive( { useHandCursor: true } );
+		mainScene.createBrokenDataLine(i);
+		/*var brokenData = this.add.text(brokenLinePlotArray[i].x, brokenLinePlotArray[i].y, brokenLinePlotArray[i].value, { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana').setInteractive( { useHandCursor: true } );
 		brokenData.targetX = brokenLinePlotArray[i].targetX;
 		brokenData.targetY = brokenLinePlotArray[i].targetY;
 		brokenData.startX = brokenLinePlotArray[i].startX;
 		brokenData.startY = brokenLinePlotArray[i].startY;
 		brokenData.unitText = brokenLinePlotArray[i].unitValue;
 		brokenData.matched = false;
+		var that = this;
+		brokenData.on('pointerdown', function() {      
+			brokenData.setScale(1.1);	
+			activeBrokenData = brokenData;
+			that.input.once('pointerdown', function (pointer) {
+				if (brokenAmount>0&&activeBrokenData!='none') {
+					if ((pointer.x>=brokenData.targetX-25)&&(pointer.x<=brokenData.targetX+45)&&(pointer.y>=90)&&(pointer.y<=510)) {			
+						that.tweens.add({
+							targets: brokenData,
+							x: brokenData.targetX-11,
+							y: brokenData.targetY-11,
+							ease: 'Sine.easeIn',					
+							duration: 500,					
+						}); 
+						var finalPosX = that.add.text(brokenData.targetX, brokenData.targetY, 'X', { fontSize: '22px', fill: '#008106' }).setFontFamily('Arial').setOrigin(0.5);				
+						xArray.push(finalPosX);				
+						if (!brokenData.matched) {					
+							brokenData.visible = false;	
+							brokenAmount--;
+							brokenData.matched = true;
+							activeBrokenData = 'none';
+							if (brokenAmount==0&&broken) {
+								broken = false;
+								speechText = that.changeText();
+								that.createBubble(715, 276, speechText, true);
+							}
+						}	
+					}
+					else {	
+						mainScene.wrongSL();	
+					}
+				}
+			}, this);			
+		}); */
+		//old drag code
+		/*
 		this.input.setDraggable(brokenData);
 		this.input.on('drag', function (pointer, gameObject, dragX, dragY) {			
 			gameObject.x = dragX;
 			gameObject.y = dragY;
 			gameObject.matched = false;
-		});
+		});		
 		var that = this;
 		this.input.on('dragend', function (pointer, gameObject) {
 			if ((gameObject.x>=gameObject.targetX-25)&&(gameObject.x<=gameObject.targetX+45)&&(gameObject.y>=90)&&(gameObject.y<=510)) {				
 				gameObject.x = gameObject.targetX-11;
-				gameObject.y = gameObject.targetY-11;							
-				//gameObject.text = 'X';	
-				var finalPosX = that.add.text(gameObject.targetX, gameObject.targetY, 'X', { fontSize: '22px', fill: '#008106' }).setFontFamily('Arial').setOrigin(0.5);
-				//console.log(finalPosX);
-				xArray.push(finalPosX);
-				//console.log(gameObject);
-				if (!gameObject.matched) {
-					
+				gameObject.y = gameObject.targetY-11;	
+				var finalPosX = that.add.text(gameObject.targetX, gameObject.targetY, 'X', { fontSize: '22px', fill: '#008106' }).setFontFamily('Arial').setOrigin(0.5);				
+				xArray.push(finalPosX);				
+				if (!gameObject.matched) {					
 					gameObject.visible = false;	
 					brokenAmount--;
-					gameObject.matched = true;
-					//console.log(brokenAmount);
+					gameObject.matched = true;					
 					if (brokenAmount==0&&broken) {
 						broken = false;
 						speechText = that.changeText();
-						that.createBubble(715, 276, speechText);
+						that.createBubble(715, 276, speechText, true);
 					}
-				}
-				//console.log(brokenAmount);
+				}	
 			}
-			else {
-				//console.log(gameObject.x+', '+gameObject.y+'/ '+gameObject.targetX+', '+gameObject.targetY);
+			else {	
 				that.tweens.add({
 					targets: gameObject,
 					x: gameObject.startX,
@@ -841,8 +1353,8 @@ mainScene.correctBrokenLinePlot = function() {
 					duration: 500,					
 				}); 
 			}
-		});
-	}
+		});*/
+	}	
 };
 
 mainScene.createStemAndLeafPlot = function(array) {
@@ -931,10 +1443,15 @@ mainScene.createStemAndLeafPlot = function(array) {
 	var xPosArray = [];
     var yPosArray = [];
 	var unitsDisplayArray = [];
+	var units = 0;
+	var tens = 0;
+	var twenties = 0;
+	var thirties = 0;
     for (var i=0; i<sortedDisplayArray.length; i++) {
         if (sortedArray[i]<10) {
             xPos+=spacing;
 			sortedDisplayArray[i].unitsText = sortedDisplayArray[i].text;
+			units++;
         }
         else if (sortedArray[i]<20) {
             if (sortedArray[i-1]<10) {
@@ -943,6 +1460,7 @@ mainScene.createStemAndLeafPlot = function(array) {
             xPos+=spacing;
             yPos = 290;
             sortedDisplayArray[i].unitsText = sortedDisplayArray[i].text-10;
+			tens++;
         } 
         else if (sortedArray[i]<30) {
             if (sortedArray[i-1]<20) {
@@ -951,6 +1469,7 @@ mainScene.createStemAndLeafPlot = function(array) {
             xPos+=spacing;
             yPos = 360;
             sortedDisplayArray[i].unitsText = sortedDisplayArray[i].text-20;
+			twenties++;
         }
         else if (sortedArray[i]<40) {
             if (sortedArray[i-1]<30) {
@@ -959,8 +1478,9 @@ mainScene.createStemAndLeafPlot = function(array) {
             xPos+=spacing;
             yPos = 430;
             sortedDisplayArray[i].unitsText = sortedDisplayArray[i].text-30;
+			thirties++;
         }
-		if (broken&&i%3==0) {
+		if (broken&&i%2==0) {
 			sortedDisplayArray[i].visible = false;
 			var brokenDataInfo = {
 				x: sortedDisplayArray[i].x,
@@ -973,7 +1493,7 @@ mainScene.createStemAndLeafPlot = function(array) {
 				unitValue: sortedDisplayArray[i].unitsText
 			};
 			brokenStemLeafArray.push(brokenDataInfo);
-		}
+		}		
         delay+=150;		
         this.tweens.add({
             targets: sortedDisplayArray[i],
@@ -985,7 +1505,7 @@ mainScene.createStemAndLeafPlot = function(array) {
         }); 
 		xPosArray.push(xPos);
 		yPosArray.push(yPos);
-		if (broken&&i%3==0) {
+		if (broken&&i%2==0) {
 			unitsDisplayArray.push('');
 		}
 		else {			
@@ -996,6 +1516,10 @@ mainScene.createStemAndLeafPlot = function(array) {
 	//console.log(xPosArray);
 	//console.log(yPosArray);
 	//console.log(unitsDisplayArray);
+	if (!broken&&textNumber==8) {
+		mainScene.checkHighestRow(units, tens, twenties, thirties);
+		//console.log(units+', '+tens+', '+twenties+', '+thirties);
+	}
 	for (var i=0; i<unitsDisplayArray.length; i++) {        
         var unitsOnlyText = this.add.text(xPosArray[i], yPosArray[i], unitsDisplayArray[i], { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana');
 		unitsOnlyText.alpha = 0;
@@ -1025,14 +1549,203 @@ mainScene.createStemAndLeafPlot = function(array) {
 	else {
 		speechText = this.changeText();
 	}    
-    this.time.delayedCall(delay+1000, function() { this.createBubble(715, 276, speechText); }, [], this);
+    this.time.delayedCall(delay-2000, function() { 
+		this.createBubble(715, 276, speechText, true);		
+		if (!mute) {
+			if (broken) {
+				LoLApi('speakText', { key: 'stemBrokenResponse' });
+			}
+			else {
+				LoLApi('speakText', { key: speechText });
+			}			
+		}
+	}, [], this);
+};
+
+mainScene.checkHighestRow = function(units, tens, twenties, thirties) {
+	var tensCorrect, twentiesCorrect;
+	if (tens>twenties) {
+		tensCorrect = true;
+		twentiesCorrect = false;
+	}
+	else if (tens<twenties) {
+		tensCorrect = false;
+		twentiesCorrect = true;
+	}
+	else if (tens==twenties) {
+		tensCorrect = true;
+		twentiesCorrect = true;
+	}
+	//console.log(units+', '+tens+', '+twenties+', '+thirties);
+	//console.log(tensCorrect+', '+twentiesCorrect);
+	//create buttons  70high, yPos = 220, 290, 360, 430
+	var unitsButton = this.add.sprite(285, 228, 'buttonLong').setInteractive( { useHandCursor: true  } );
+	unitsButton.setScale(2, 1);
+    unitsButton.alpha = 0.01;	
+	var tensButton = this.add.sprite(285, 298, 'buttonLong').setInteractive( { useHandCursor: true  } );
+	tensButton.setScale(2, 1);
+    tensButton.alpha = 0.01;	
+	var twentiesButton = this.add.sprite(285, 368, 'buttonLong').setInteractive( { useHandCursor: true  } );
+	twentiesButton.setScale(2, 1);
+    twentiesButton.alpha = 0.01;	
+	var thirtiesButton = this.add.sprite(285, 438, 'buttonLong').setInteractive( { useHandCursor: true  } );
+	thirtiesButton.setScale(2, 1);
+    thirtiesButton.alpha = 0.01;	
+	var that = this;
+	unitsButton.on('pointerdown', function() { 
+		mainScene.wrongSL();		
+	}); 
+	if (tensCorrect) {
+		tensButton.on('pointerdown', function() { 			
+			mainScene.correctSL();
+		} ); 		
+	}
+	else {
+		tensButton.on('pointerdown', function() { 
+			mainScene.wrongSL();			
+		}); 
+	}
+	if (twentiesCorrect) {
+		twentiesButton.on('pointerdown', function() { 			
+			mainScene.correctSL(); 
+		} ); 		
+	}
+	else {
+		twentiesButton.on('pointerdown', function() { 
+			mainScene.wrongSL();			
+		}); 
+	}
+	thirtiesButton.on('pointerdown', function() { 
+		mainScene.wrongSL();		
+	}); 
+	highestRowButtonArray = [unitsButton, tensButton, twentiesButton, thirtiesButton];
+};
+
+mainScene.wrongSL = function() {	
+	//console.log(textNumber);
+	if (textNumber==9||textNumber==13) {			
+		var speechTextWrong = jsonText.wrongAnswer;
+		mainScene.createBubbleTwo(715, 276, speechTextWrong, false);
+		if (!mute) {				
+			LoLApi('speakText', { key: 'wrongAnswer' });
+		}	
+	}
+};
+
+mainScene.correctSL = function() {	
+	if (textNumber==9) {	
+		var speechText = mainScene.changeText();
+		mainScene.createBubble(715, 276, speechText, true);
+		if (!mute) {				
+			LoLApi('speakText', { key: speechText });
+		}	
+		if (highestRowButtonArray.length>0) {
+			for (var i=0; i<highestRowButtonArray.length; i++) {
+				highestRowButtonArray[i].destroy();
+			}
+		}	
+	}
+};
+
+mainScene.correctLP = function() {	
+	if (textNumber==13) {	
+		var speechText = mainScene.changeText();
+		mainScene.createBubble(715, 276, speechText, true);
+		if (!mute) {				
+			LoLApi('speakText', { key: speechText });
+		}		
+		if (highestColumnButtonArray.length>0) {
+			for (var i=0; i<highestColumnButtonArray.length; i++) {
+				highestColumnButtonArray[i].destroy();
+			}
+		}
+	}
+};
+
+mainScene.checkHighestColumn = function(array, start) {
+	var newXPosArray = this.removeDuplicates(array);
+	var gap = newXPosArray[1]-newXPosArray[0];
+	var xScale = gap/200;
+	var correctColumn;
+	if (start==1) {
+		correctColumn = 3;
+	}
+	else {
+		correctColumn = 2;
+	}
+	for (var i = 0; i<newXPosArray.length; i++) {
+		var columnButton = this.add.sprite(newXPosArray[i], 288, 'buttonLong').setInteractive( { useHandCursor: true  } );
+		columnButton.setScale(xScale, 6);
+		columnButton.alpha = 0.01;	
+		if (i==correctColumn) {
+			columnButton.on('pointerdown', function() { 				
+				mainScene.correctLP(); 
+			} ); 		
+		}
+		else {
+			columnButton.on('pointerdown', function() { 
+				mainScene.wrongSL();				
+			}); 
+		}
+		highestColumnButtonArray.push(columnButton);
+	}
+};
+
+mainScene.createBrokenDataStem = function(i) {
+	var brokenData = this.add.text(brokenStemLeafArray[i].x, brokenStemLeafArray[i].y, brokenStemLeafArray[i].value, { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana').setInteractive( { useHandCursor: true } );
+	brokenData.targetX = brokenStemLeafArray[i].targetX;
+	brokenData.targetY = brokenStemLeafArray[i].targetY;
+	brokenData.startX = brokenStemLeafArray[i].startX;
+	brokenData.startY = brokenStemLeafArray[i].startY;
+	brokenData.unitText = brokenStemLeafArray[i].unitValue;
+	brokenData.matched = false;
+	var that = this;
+	brokenData.on('pointerdown', function() {      
+		for (var i=0; i<brokenStemDataArray.length; i++) {
+			brokenStemDataArray[i].setScale(1);
+		}
+		brokenData.setScale(1.15);	
+		activeBrokenData = brokenData;		
+		that.input.on('pointerdown', function (pointer) {			
+			//console.log(pointer.x);
+			//console.log(pointer.y);
+			if (brokenAmount>0&&activeBrokenData!='none') {
+				if ((pointer.x>=brokenData.targetX-40)&&(pointer.x<=brokenData.targetX+60)&&(pointer.y>=brokenData.targetY-40)&&(pointer.y<=brokenData.targetY+60)) {			
+					that.tweens.add({
+						targets: brokenData,
+						x: brokenData.targetX,
+						y: brokenData.targetY,
+						ease: 'Sine.easeIn',					
+						duration: 500,					
+					}); 								
+					if (!brokenData.matched) {	
+						brokenData.setScale(1);	
+						brokenData.text = brokenData.unitText;
+						brokenAmount--;
+						brokenData.matched = true;
+						activeBrokenData = 'none';
+						if (brokenAmount==0&&broken) {
+							broken = false;							
+							speechText = that.changeText();
+							that.createBubble(715, 276, speechText, true);
+						}
+					}	
+				}
+				else {	
+					mainScene.wrongSL();	
+				}
+			}
+		}, this);			
+	}); 
+	brokenStemDataArray.push(brokenData);
 };
 
 mainScene.correctBrokenStemLeaf = function() {
-	brokenAmount = 5;
+	brokenAmount = 8;
 	brokenType = 's&l';
 	for (var i=0; i<brokenStemLeafArray.length; i++) {
-		var brokenData = this.add.text(brokenStemLeafArray[i].x, brokenStemLeafArray[i].y, brokenStemLeafArray[i].value, { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana').setInteractive( { useHandCursor: true } );
+		mainScene.createBrokenDataStem(i);
+		/*var brokenData = this.add.text(brokenStemLeafArray[i].x, brokenStemLeafArray[i].y, brokenStemLeafArray[i].value, { fontSize: '16px', fill: '#008106' }).setFontFamily('Verdana').setInteractive( { useHandCursor: true } );
 		brokenData.targetX = brokenStemLeafArray[i].targetX;
 		brokenData.targetY = brokenStemLeafArray[i].targetY;
 		brokenData.startX = brokenStemLeafArray[i].startX;
@@ -1059,7 +1772,7 @@ mainScene.correctBrokenStemLeaf = function() {
 						if (brokenAmount==0&&broken) {
 							broken = false;
 							speechText = that.changeText();
-							that.createBubble(715, 276, speechText);
+							that.createBubble(715, 276, speechText, true);
 						}
 					}
 					//console.log(brokenAmount);
@@ -1075,7 +1788,7 @@ mainScene.correctBrokenStemLeaf = function() {
 					}); 
 				}
 			});
-		}
+		}*/
 	}
 };
 
@@ -1107,8 +1820,10 @@ mainScene.ingredientSelected = function(button) {
 		ingredientsButtonArray[i].visible = false;
 	}
 	var newIngredient;
-	bubbleText.text = '';		
-	bubbleSprite.anims.play('bubbleClose');	
+	if (bubbleVisible) {
+		bubbleText.text = '';		
+		bubbleSprite.anims.play('bubbleClose');	
+	}
 	if (button==1) {
         newIngredient = possibleIngredientsArray[0][0];
 		frame = possibleIngredientsArray[0][1];
@@ -1124,7 +1839,9 @@ mainScene.ingredientSelected = function(button) {
 		frame = possibleIngredientsArray[2][1];
 		possibleIngredientsArray.splice(2, 1);
     }
-	if (extraIngredient1.name=='none') {
+	extraIngredient1.name = newIngredient;
+	extraIngredient1.frame = frame;
+	/*if (extraIngredient1.name=='none') {
 		extraIngredient1.name = newIngredient;
 		extraIngredient1.frame = frame;
 	}
@@ -1135,12 +1852,15 @@ mainScene.ingredientSelected = function(button) {
 	else if (extraIngredient3.name=='none') {
 		extraIngredient3.name = newIngredient;
 		extraIngredient3.frame = frame;
-	}
+	}*/
 	//console.log(extraIngredient1.name);
 	
 	this.time.delayedCall(250, function() { 
         var speechText = mainScene.changeText();
-    	mainScene.createBubble(715, 276, speechText);
+    	mainScene.createBubble(715, 276, speechText, true);
+		if (!mute) {				
+			LoLApi('speakText', { key: speechText });
+		}
     }, [], this);
 	
 };
@@ -1171,6 +1891,18 @@ mainScene.shuffle = function(array) {
         array[randomIndex] = temporaryValue;
     }
     return array;
+};
+
+mainScene.removeDuplicates = function(arr) {
+	var elems = {},    
+	arr = arr.filter(function (e) {
+		if (elems[e] === undefined) {
+			elems[e] = true;
+			return true;
+		}
+		return false;
+	});
+	return arr;
 };
 
 mainScene.findMode = function(array) {

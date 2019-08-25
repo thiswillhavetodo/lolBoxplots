@@ -10,7 +10,7 @@ var config = {
   height: 576, // game height
   parent: 'phaser-app',
   pixelArt: true,
-  scene: [bootScene, preloadScene, menuScene, mainScene, warehouseScene, labScene, gameScene], // our newly created scene
+  scene: [bootScene, preloadScene, menuScene, mainScene, mapScene, warehouseScene, labScene, gameScene], // our newly created scene
   backgroundColor: '#ccc'
 };
  

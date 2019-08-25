@@ -42,7 +42,7 @@ preloadScene.preload = function() {
     
     this.load.spritesheet('computer', 
         'gameassets/images/computer.png',
-        { frameWidth: 156, frameHeight: 134 }
+        { frameWidth: 180, frameHeight: 134 }
     );
     
     this.load.spritesheet('treadmill', 
@@ -78,6 +78,10 @@ preloadScene.preload = function() {
         'gameassets/images/splatter.png',
         { frameWidth: 400, frameHeight: 300 }
     ); 
+	this.load.spritesheet('healthBar', 
+        'gameassets/images/healthBar.png',
+        { frameWidth: 44, frameHeight: 10 }
+    ); 
     //audio
     
     //music tracks
@@ -86,7 +90,7 @@ preloadScene.preload = function() {
     ]);*/
     
     //sfx
-    this.load.audio('pop', [
+    /*this.load.audio('pop', [
         'gameassets/audio/pop.mp3',
     ]);
 	this.load.audio('conveyor', [
@@ -115,9 +119,10 @@ preloadScene.preload = function() {
     ]);
 	this.load.audio('smash', [
         'gameassets/audio/woodSmash.mp3',
-    ]);
+    ]);*/
     //images
-    
+	
+    this.load.image('countrysideMap', 'gameassets/images/countrysideMap.png');
     this.load.image('officeBackground', 'gameassets/images/officeBackground.png');
     this.load.image('labBackground', 'gameassets/images/labBackground.png');
 	this.load.image('blankBackground', 'gameassets/images/blankBackground.png');
@@ -132,18 +137,21 @@ preloadScene.preload = function() {
 
 preloadScene.create = function() {
 	activeScene = "preload";
-	LoLApi('gameIsReady', { 
-		aspectRatio: "16:9",
-		resolution: "1024x576",
-	});
-	//console.log('site ready');
 	loadingText.text = " Ready";
-    /*try {
+	this.loadPage(); //remove when ready to use LoL api
+	
+    /*try { //only needed if save used
         this.saveLoad();
     }
     catch(err) {
         saveDataAvailable = false;
     }*/
+	/*
+	LoLApi('gameIsReady', { 
+		aspectRatio: "16:9",
+		resolution: "1024x576",
+	});
+	//console.log('site ready');	
 	var that = this;
 	window.addEventListener("message", function (msg) {
 		// Message name and JSONified payload
@@ -172,7 +180,7 @@ preloadScene.create = function() {
 		}
 		
 	});
-	
+	*/
 };
 
 preloadScene.update = function() {
@@ -183,22 +191,21 @@ preloadScene.update = function() {
 };
 
 preloadScene.loadPage = function() {
-	//var lang = "en";
-	jsonText = this.cache.json.get('text');
-	//jsonText.lang = lang;
+	
+	/*jsonText = this.cache.json.get('text'); //needed when text file and api ready	
 	//console.log(jsonText);
-	jsonText = jsonText[lang];
-	//console.log(jsonText);
+	//jsonText = jsonText[lang];
+	console.log(jsonText);*/
 	this.animsCreate();
-	possibleIngredientsArray = [[jsonText.possIngredients0, 0], [jsonText.possIngredients1, 1], [jsonText.possIngredients2, 2], [jsonText.possIngredients3, 3], [jsonText.possIngredients4, 4], [jsonText.possIngredients5, 5]];
-	possibleResponsesArray = [jsonText.possResponses0, jsonText.possResponses1, jsonText.possResponses2];
+	
 	var startButton = this.add.sprite(512, 375, 'buttonLarge').setInteractive( { useHandCursor: true  } );
 	startButton.on('pointerdown', this.start); 
-	//this.add.text(462, 350, "Play!", { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 });
-	this.add.text(517, 375, jsonText.pre1, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+	this.add.text(517, 375, "Play", { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+	//this.add.text(517, 375, jsonText.pre1, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
 	var startMutedButton = this.add.sprite(512, 475, 'buttonLarge').setInteractive( { useHandCursor: true  } );
 	startMutedButton.on('pointerdown', this.startMuted); 
-	this.add.text(517, 475, jsonText.pre2, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+	this.add.text(517, 475, "Play Muted", { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
+	//this.add.text(517, 475, jsonText.pre2, { fontSize: '38px', fill: '#000' }).setFontStyle('bold italic').setFontFamily('Arial').setPadding({ right: 16 }).setOrigin(0.5);
 	
 };
 
@@ -239,8 +246,20 @@ preloadScene.animsCreate = function() {
         repeat: -1
     });
     this.anims.create({
-        key: 'monsterRun',
-        frames: this.anims.generateFrameNumbers('monsters', { frames: [ 3, 5, 4, 5 ] }),
+        key: 'monsterRunRed',
+        frames: this.anims.generateFrameNumbers('monsters', { frames: [ 6, 8, 7, 8 ] }),
+        frameRate: 8,
+        repeat: 0.7
+    });
+	this.anims.create({
+        key: 'monsterRunWhite',
+        frames: this.anims.generateFrameNumbers('monsters', { frames: [ 9, 11, 10, 11 ] }),
+        frameRate: 8,
+        repeat: -1
+    });
+	this.anims.create({
+        key: 'monsterRunBlack',
+        frames: this.anims.generateFrameNumbers('monsters', { frames: [ 12, 14, 13, 14 ] }),
         frameRate: 8,
         repeat: -1
     });
